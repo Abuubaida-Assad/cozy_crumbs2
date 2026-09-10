@@ -171,16 +171,41 @@ export const createProduct = async (req, res) => {
       nutritionalInfo,
     } = req.body;
 
-    if (!name || !category || !image) {
+    if (!name || !image) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide name, category, and image',
+        message: 'Please provide name and image',
       });
     }
 
-    const catObj = await Category.findById(category);
+    let targetCategory = category || req.body.categoryId || req.body.categoryName;
+    let catObj = null;
+
+    if (targetCategory) {
+      if (typeof targetCategory === 'string' && targetCategory.match(/^[0-9a-fA-F]{24}$/)) {
+        catObj = await Category.findById(targetCategory);
+      }
+      if (!catObj) {
+        catObj = await Category.findOne({
+          $or: [
+            { slug: String(targetCategory).toLowerCase().replace(/[^a-z0-9]+/g, '-') },
+            { name: { $regex: new RegExp(`^${targetCategory}$`, 'i') } },
+          ],
+        });
+      }
+    }
+
     if (!catObj) {
-      return res.status(400).json({ success: false, message: 'Invalid category specified' });
+      catObj = await Category.findOne({});
+      if (!catObj) {
+        const catName = req.body.categoryName || 'Cakes';
+        catObj = await Category.create({
+          name: catName,
+          slug: catName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+          description: `Freshly baked ${catName} handcrafted daily at Cozy Crumbs.`,
+          image: image || '/images/products/cakes/chocolate-cake.webp',
+        });
+      }
     }
 
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
@@ -192,7 +217,7 @@ export const createProduct = async (req, res) => {
       price: Number(price) || 0,
       weight: weight || '500g',
       image,
-      category,
+      category: catObj._id,
       isVeg: isVeg !== undefined ? Boolean(isVeg) : true,
       isEggless: isEggless !== undefined ? Boolean(isEggless) : false,
       isFeatured: isFeatured !== undefined ? Boolean(isFeatured) : false,
@@ -243,12 +268,23 @@ export const updateProduct = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
-    if (category) {
-      const catObj = await Category.findById(category);
-      if (!catObj) {
-        return res.status(400).json({ success: false, message: 'Invalid category specified' });
+    let targetCategory = category || req.body.categoryId || req.body.categoryName;
+    if (targetCategory) {
+      let catObj = null;
+      if (typeof targetCategory === 'string' && targetCategory.match(/^[0-9a-fA-F]{24}$/)) {
+        catObj = await Category.findById(targetCategory);
       }
-      product.category = category;
+      if (!catObj) {
+        catObj = await Category.findOne({
+          $or: [
+            { slug: String(targetCategory).toLowerCase().replace(/[^a-z0-9]+/g, '-') },
+            { name: { $regex: new RegExp(`^${targetCategory}$`, 'i') } },
+          ],
+        });
+      }
+      if (catObj) {
+        product.category = catObj._id;
+      }
     }
 
     if (name) {

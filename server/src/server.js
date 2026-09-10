@@ -11,6 +11,8 @@ import categoryRoutes from './routes/categoryRoutes.js';
 import productRoutes from './routes/productRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
 import storeRoutes from './routes/storeRoutes.js';
+import uploadRoutes from './routes/uploadRoutes.js';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -52,11 +54,18 @@ app.get('/api/health', (req, res) => {
 });
 
 // Mount Routes
+const uploadsDir = path.resolve(__dirname, '../uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+app.use('/uploads', express.static(uploadsDir));
+
 app.use('/api/auth', authRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/stores', storeRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Error Handling
 app.use(notFound);

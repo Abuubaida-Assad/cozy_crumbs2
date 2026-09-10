@@ -164,8 +164,15 @@ export const BakeryProvider = ({ children }) => {
         const catData = await catRes.json();
         if (catData.success && Array.isArray(catData.data) && catData.data.length > 0) {
           const normCats = catData.data.map(c => normalizeCategory(c, products));
-          setCategories(normCats);
-          localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(normCats));
+          const apiCatIds = new Set(normCats.map(c => String(c._id)));
+          setCategories((prev) => {
+            const localOnly = (prev || []).filter(c => !apiCatIds.has(String(c._id)) && !apiCatIds.has(String(c.id)) && String(c._id).startsWith('cat_'));
+            const merged = [...normCats, ...localOnly];
+            try {
+              localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(merged));
+            } catch (e) {}
+            return merged;
+          });
         }
       }
 
@@ -175,8 +182,15 @@ export const BakeryProvider = ({ children }) => {
         const prodData = await prodRes.json();
         if (prodData.success && Array.isArray(prodData.data) && prodData.data.length > 0) {
           const normProds = prodData.data.map(normalizeProduct);
-          setProducts(normProds);
-          localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(normProds));
+          const apiIds = new Set(normProds.map(p => String(p._id)));
+          setProducts((prev) => {
+            const localOnly = (prev || []).filter(p => !apiIds.has(String(p._id)) && !apiIds.has(String(p.id)) && String(p._id).startsWith('prod_'));
+            const merged = [...normProds, ...localOnly];
+            try {
+              localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(merged));
+            } catch (e) {}
+            return merged;
+          });
         }
       }
 
@@ -204,7 +218,6 @@ export const BakeryProvider = ({ children }) => {
     refreshFromAPI();
 
     const handleSync = (e) => {
-      // When another component triggers sync, re-read local storage
       try {
         const p = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
         if (p) setProducts(JSON.parse(p).map(normalizeProduct));
@@ -228,16 +241,8 @@ export const BakeryProvider = ({ children }) => {
   // ================= Product Operations =================
   const addProduct = async (productData) => {
     const token = localStorage.getItem('cozy_crumbs_admin_token');
-    const newProd = normalizeProduct({
-      ...productData,
-      _id: `prod_${Date.now()}`,
-      createdAt: new Date().toISOString(),
-    });
+    let savedFromBackend = null;
 
-    const updated = [newProd, ...products];
-    persistProducts(updated);
-
-    // Call API in background
     if (token) {
       try {
         const res = await fetch('/api/products', {
@@ -250,14 +255,30 @@ export const BakeryProvider = ({ children }) => {
         });
         const data = await res.json();
         if (data.success && data.data) {
-          // Replace optimistic ID with DB ID
-          const finalProds = updated.map(p => p._id === newProd._id ? normalizeProduct(data.data) : p);
-          persistProducts(finalProds);
+          savedFromBackend = normalizeProduct(data.data);
         }
       } catch (e) {
-        console.warn('Product POST failed, saved to local store:', e);
+        console.warn('Product POST network issue, falling back to local storage:', e);
       }
     }
+
+    const newProd = savedFromBackend || normalizeProduct({
+      ...productData,
+      _id: `prod_${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    });
+
+    setProducts((prev) => {
+      const updated = [newProd, ...prev.filter(p => p._id !== newProd._id && p.id !== newProd.id)];
+      try {
+        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(updated));
+        window.dispatchEvent(new CustomEvent('cozy_crumbs_data_sync', { detail: { type: 'products' } }));
+      } catch (err) {
+        console.warn(err);
+      }
+      return updated;
+    });
+
     return { success: true, product: newProd };
   };
 

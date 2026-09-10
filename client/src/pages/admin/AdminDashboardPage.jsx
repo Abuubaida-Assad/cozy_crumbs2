@@ -25,6 +25,7 @@ import {
 } from '../../components/admin/AdminIcons';
 import { useAuth } from '../../context/AuthContext';
 import { useBakery } from '../../context/BakeryContext';
+import ImageUploader from '../../components/admin/ImageUploader';
 
 export default function AdminDashboardPage() {
   const { logout } = useAuth();
@@ -199,9 +200,18 @@ export default function AdminDashboardPage() {
     }
 
     try {
+      const selectedCatObj = safeCategories.find(
+        (c) => c.name?.toLowerCase() === productForm.categoryName?.toLowerCase() ||
+               c._id === productForm.categoryName ||
+               c.id === productForm.categoryName
+      );
+
       const payload = {
         ...productForm,
         name: productForm.name.trim(),
+        category: selectedCatObj?._id || selectedCatObj?.id || productForm.categoryName,
+        categoryName: selectedCatObj?.name || productForm.categoryName,
+        categorySlug: selectedCatObj?.slug || productForm.categoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
         price: Number(productForm.price) || 0,
         ingredients: productForm.ingredients
           ? productForm.ingredients.split(',').map((s) => s.trim()).filter(Boolean)
@@ -1303,40 +1313,13 @@ export default function AdminDashboardPage() {
                   />
                 </div>
 
-                {/* Image Selection */}
-                <div>
-                  <label className="block text-gray-600 mb-1">Image URL or Pick Preset</label>
-                  <input
-                    type="text"
-                    value={productForm.image}
-                    onChange={(e) => setProductForm({ ...productForm, image: e.target.value })}
-                    placeholder="/images/products/cakes/chocolate-cake.webp"
-                    className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#C06B3E] font-medium mb-2"
-                  />
-
-                  {/* Curated Thumbnails to pick */}
-                  <div className="flex items-center gap-2 overflow-x-auto py-1">
-                    {curatedImages.map((img) => (
-                      <button
-                        key={img.url}
-                        type="button"
-                        onClick={() => setProductForm({ ...productForm, image: img.url })}
-                        className={`p-1 rounded-lg border shrink-0 transition cursor-pointer ${
-                          productForm.image === img.url
-                            ? 'border-[#C06B3E] ring-2 ring-[#C06B3E]/30 bg-amber-50'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                        title={img.label}
-                      >
-                        <img
-                          src={img.url}
-                          alt={img.label}
-                          className="w-10 h-10 object-cover rounded-md"
-                        />
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                {/* Image Selection with Direct Device Upload */}
+                <ImageUploader
+                  label="Product Photo"
+                  value={productForm.image}
+                  onChange={(val) => setProductForm({ ...productForm, image: val })}
+                  presets={curatedImages}
+                />
 
                 {/* Toggles: Dietary & Flags */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
@@ -1481,16 +1464,13 @@ export default function AdminDashboardPage() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-gray-600 mb-1">Cover Image URL</label>
-                  <input
-                    type="text"
-                    value={categoryForm.image}
-                    onChange={(e) => setCategoryForm({ ...categoryForm, image: e.target.value })}
-                    placeholder="/images/products/cakes/chocolate-cake.webp"
-                    className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#C06B3E] font-medium"
-                  />
-                </div>
+                {/* Category Cover Photo with Direct Device Upload */}
+                <ImageUploader
+                  label="Category Cover Photo"
+                  value={categoryForm.image}
+                  onChange={(val) => setCategoryForm({ ...categoryForm, image: val })}
+                  presets={curatedImages}
+                />
 
                 <div className="pt-2">
                   <label className="flex items-center gap-2 cursor-pointer">

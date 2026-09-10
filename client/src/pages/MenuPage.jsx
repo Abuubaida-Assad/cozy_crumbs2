@@ -16,19 +16,22 @@ export default function MenuPage() {
 
   const categories = useMemo(() => {
     const list = (liveCategories || []).filter(c => c.isActive !== false).map((c) => c.name);
-    return ['All', ...list];
-  }, [liveCategories]);
+    const prodCats = (products || []).map((p) => p.categoryName || p.category?.name).filter(Boolean);
+    const set = new Set(['All', ...list, ...prodCats]);
+    return Array.from(set);
+  }, [liveCategories, products]);
 
   const filteredProducts = useMemo(() => {
     return (products || []).filter((p) => {
       if (p.isAvailable === false) return false;
-      if (selectedCategory !== 'All' && p.categoryName?.toLowerCase() !== selectedCategory.toLowerCase()) return false;
+      const catName = p.categoryName || p.category?.name || (typeof p.category === 'string' ? p.category : '');
+      if (selectedCategory !== 'All' && catName.toLowerCase() !== selectedCategory.toLowerCase()) return false;
       if (searchQuery.trim() !== '') {
         const q = searchQuery.toLowerCase();
         return (
-          p.name.toLowerCase().includes(q) ||
-          p.description.toLowerCase().includes(q) ||
-          p.categoryName?.toLowerCase().includes(q)
+          p.name?.toLowerCase().includes(q) ||
+          p.description?.toLowerCase().includes(q) ||
+          catName.toLowerCase().includes(q)
         );
       }
       return true;
@@ -97,7 +100,7 @@ export default function MenuPage() {
           <AnimatePresence mode="popLayout">
             {filteredProducts.map((product, index) => (
               <motion.div
-                key={product.id}
+                key={product.id || product._id || product.slug || `prod-${index}`}
                 layout
                 initial={{ opacity: 0, y: 40, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
