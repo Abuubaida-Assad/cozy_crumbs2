@@ -118,4 +118,20 @@ export const CartProvider = ({ children }) => {
   );
 };
 
-export const useCart = () => useContext(CartContext);
+export const useCart = () => {
+  const context = useContext(CartContext);
+  return context || {
+    cart: [],
+    addToCart: () => {},
+    removeFromCart: () => {},
+    updateQuantity: () => {},
+    clearCart: () => {},
+    cartCount: 0,
+    subtotal: 0,
+    isCartOpen: false,
+    setIsCartOpen: () => {},
+    selectedProductModal: null,
+    openProductModal: () => {},
+    closeProductModal: () => {},
+  };
+};

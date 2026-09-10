@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard,
@@ -19,24 +19,20 @@ import {
   Check,
   ChevronRight,
   MessageSquare,
-  AlertCircle,
   Eye,
   EyeOff,
-  Clock,
   Phone,
-  User as UserIcon,
-} from 'lucide-react';
+} from '../../components/admin/AdminIcons';
 import { useAuth } from '../../context/AuthContext';
 import { useBakery } from '../../context/BakeryContext';
 
 export default function AdminDashboardPage() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const {
-    products,
-    categories,
-    inquiries,
+    products = [],
+    categories = [],
+    inquiries = [],
     addProduct,
     updateProduct,
     deleteProduct,
@@ -47,8 +43,12 @@ export default function AdminDashboardPage() {
     deleteCategory,
     updateInquiryStatus,
     deleteInquiry,
-    isOnline,
   } = useBakery();
+
+  // Safe arrays
+  const safeProducts = Array.isArray(products) ? products : [];
+  const safeCategories = Array.isArray(categories) ? categories : [];
+  const safeInquiries = Array.isArray(inquiries) ? inquiries : [];
 
   // Active navigation tab: 'dashboard' | 'products' | 'categories' | 'messages'
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -117,15 +117,16 @@ export default function AdminDashboardPage() {
   ];
 
   // ================= Calculations for Stats =================
-  const totalProductsCount = products.length;
-  const activeCategoriesCount = categories.filter((c) => c.isActive !== false).length;
-  const signatureFeaturedCount = products.filter((p) => p.isFeatured).length;
-  const availableProductsCount = products.filter((p) => p.isAvailable !== false).length;
-  const unreadInquiriesCount = inquiries.filter((i) => i.status === 'unread').length;
+  const totalProductsCount = safeProducts.length;
+  const activeCategoriesCount = safeCategories.filter((c) => c && c.isActive !== false).length;
+  const signatureFeaturedCount = safeProducts.filter((p) => p && p.isFeatured).length;
+  const availableProductsCount = safeProducts.filter((p) => p && p.isAvailable !== false).length;
+  const unreadInquiriesCount = safeInquiries.filter((i) => i && i.status === 'unread').length;
 
   // Filtered Products for Products tab
   const filteredProducts = useMemo(() => {
-    return products.filter((p) => {
+    return safeProducts.filter((p) => {
+      if (!p) return false;
       // Search
       if (searchQuery.trim() !== '') {
         const q = searchQuery.toLowerCase();
@@ -151,14 +152,14 @@ export default function AdminDashboardPage() {
 
       return true;
     });
-  }, [products, searchQuery, categoryFilter, statusFilter]);
+  }, [safeProducts, searchQuery, categoryFilter, statusFilter]);
 
   // ================= Handlers: Product =================
   const handleOpenAddProduct = () => {
     setEditingProduct(null);
     setProductForm({
       name: '',
-      categoryName: categories[0]?.name || 'Cakes',
+      categoryName: safeCategories[0]?.name || 'Cakes',
       description: '',
       price: 0,
       weight: '500g / 1kg',
@@ -176,7 +177,7 @@ export default function AdminDashboardPage() {
     setEditingProduct(prod);
     setProductForm({
       name: prod.name || '',
-      categoryName: prod.categoryName || categories[0]?.name || 'Cakes',
+      categoryName: prod.categoryName || safeCategories[0]?.name || 'Cakes',
       description: prod.description || '',
       price: prod.price || 0,
       weight: prod.weight || '500g / 1kg',
@@ -251,7 +252,7 @@ export default function AdminDashboardPage() {
       description: '',
       image: '/images/products/cakes/chocolate-cake.webp',
       icon: 'Cake',
-      displayOrder: categories.length + 1,
+      displayOrder: safeCategories.length + 1,
       isActive: true,
     });
     setIsCategoryModalOpen(true);
@@ -283,7 +284,7 @@ export default function AdminDashboardPage() {
         ...categoryForm,
         name: categoryForm.name.trim(),
         slug: categoryForm.slug.trim() || categoryForm.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-        displayOrder: Number(categoryForm.displayOrder) || categories.length + 1,
+        displayOrder: Number(categoryForm.displayOrder) || safeCategories.length + 1,
       };
 
       if (editingCategory) {
@@ -364,7 +365,7 @@ export default function AdminDashboardPage() {
             <button
               type="button"
               onClick={() => setActiveTab('dashboard')}
-              className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${
+              className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'dashboard'
                   ? 'bg-white/10 text-white border border-white/10 shadow-sm'
                   : 'hover:bg-white/5 hover:text-white'
@@ -378,7 +379,7 @@ export default function AdminDashboardPage() {
             <button
               type="button"
               onClick={() => setActiveTab('products')}
-              className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${
+              className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'products'
                   ? 'bg-white/10 text-white border border-white/10 shadow-sm'
                   : 'hover:bg-white/5 hover:text-white'
@@ -392,7 +393,7 @@ export default function AdminDashboardPage() {
             <button
               type="button"
               onClick={() => setActiveTab('categories')}
-              className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${
+              className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'categories'
                   ? 'bg-white/10 text-white border border-white/10 shadow-sm'
                   : 'hover:bg-white/5 hover:text-white'
@@ -406,7 +407,7 @@ export default function AdminDashboardPage() {
             <button
               type="button"
               onClick={() => setActiveTab('messages')}
-              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${
+              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'messages'
                   ? 'bg-white/10 text-white border border-white/10 shadow-sm'
                   : 'hover:bg-white/5 hover:text-white'
@@ -439,7 +440,7 @@ export default function AdminDashboardPage() {
           <button
             type="button"
             onClick={logout}
-            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-[#A89F91] hover:text-rose-400 transition-colors text-left"
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-[#A89F91] hover:text-rose-400 transition-colors text-left cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Logout</span>
@@ -516,7 +517,7 @@ export default function AdminDashboardPage() {
                       setActiveTab('products');
                       handleOpenAddProduct();
                     }}
-                    className="bg-[#C06B3E] hover:bg-[#a8582d] text-white text-xs font-bold uppercase tracking-wider px-5 py-3 rounded-xl transition-all shadow-sm flex items-center gap-2"
+                    className="bg-[#C06B3E] hover:bg-[#a8582d] text-white text-xs font-bold uppercase tracking-wider px-5 py-3 rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
                     <span>MANAGE PRODUCTS</span>
@@ -612,7 +613,7 @@ export default function AdminDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setActiveTab('products')}
-                      className="text-xs font-bold text-[#C06B3E] hover:text-[#9e5229] transition-colors flex items-center gap-1"
+                      className="text-xs font-bold text-[#C06B3E] hover:text-[#9e5229] transition-colors flex items-center gap-1 cursor-pointer"
                     >
                       <span>VIEW ALL</span>
                       <ChevronRight className="w-3.5 h-3.5" />
@@ -630,7 +631,7 @@ export default function AdminDashboardPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
-                        {products.slice(0, 5).map((p) => (
+                        {safeProducts.slice(0, 5).map((p) => (
                           <tr key={p._id || p.id} className="hover:bg-gray-50/50 transition-colors">
                             <td className="py-3.5 flex items-center gap-3">
                               <img
@@ -673,7 +674,7 @@ export default function AdminDashboardPage() {
                           setActiveTab('products');
                           handleOpenAddProduct();
                         }}
-                        className="w-full flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100/80 transition text-xs font-semibold text-[#1B130E]"
+                        className="w-full flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100/80 transition text-xs font-semibold text-[#1B130E] cursor-pointer"
                       >
                         <div className="flex items-center gap-2.5">
                           <span className="text-base">🎂</span>
@@ -685,7 +686,7 @@ export default function AdminDashboardPage() {
                       <button
                         type="button"
                         onClick={() => setActiveTab('categories')}
-                        className="w-full flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100/80 transition text-xs font-semibold text-[#1B130E]"
+                        className="w-full flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100/80 transition text-xs font-semibold text-[#1B130E] cursor-pointer"
                       >
                         <div className="flex items-center gap-2.5">
                           <span className="text-base">📑</span>
@@ -697,11 +698,11 @@ export default function AdminDashboardPage() {
                       <button
                         type="button"
                         onClick={() => setActiveTab('messages')}
-                        className="w-full flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100/80 transition text-xs font-semibold text-[#1B130E]"
+                        className="w-full flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100/80 transition text-xs font-semibold text-[#1B130E] cursor-pointer"
                       >
                         <div className="flex items-center gap-2.5">
                           <span className="text-base">💬</span>
-                          <span>Contact Inquiries ({inquiries.length})</span>
+                          <span>Contact Inquiries ({safeInquiries.length})</span>
                         </div>
                         <ChevronRight className="w-4 h-4 text-gray-400" />
                       </button>
@@ -758,7 +759,7 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={handleOpenAddProduct}
-                  className="bg-[#C06B3E] hover:bg-[#a8582d] text-white text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-lg transition shadow-sm flex items-center gap-2 self-start sm:self-auto"
+                  className="bg-[#C06B3E] hover:bg-[#a8582d] text-white text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-lg transition shadow-sm flex items-center gap-2 self-start sm:self-auto cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                   <span>ADD NEW PRODUCT</span>
@@ -787,7 +788,7 @@ export default function AdminDashboardPage() {
                     className="w-full md:w-auto px-4 py-2 bg-white border border-gray-200/80 rounded-xl text-xs font-medium text-gray-700 outline-none cursor-pointer focus:border-[#C06B3E]"
                   >
                     <option value="All">All Categories</option>
-                    {categories.map((c) => (
+                    {safeCategories.map((c) => (
                       <option key={c._id || c.id} value={c.name}>
                         {c.name}
                       </option>
@@ -931,7 +932,7 @@ export default function AdminDashboardPage() {
                                 type="button"
                                 onClick={() => handleOpenEditProduct(p)}
                                 title="Edit Product"
-                                className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition"
+                                className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition cursor-pointer"
                               >
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
@@ -939,7 +940,7 @@ export default function AdminDashboardPage() {
                                 type="button"
                                 onClick={() => handleDeleteProduct(p)}
                                 title="Delete Product"
-                                className="p-1.5 text-rose-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition"
+                                className="p-1.5 text-rose-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition cursor-pointer"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -981,7 +982,7 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={handleOpenAddCategory}
-                  className="bg-[#C06B3E] hover:bg-[#a8582d] text-white text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-lg transition shadow-sm flex items-center gap-2 self-start sm:self-auto"
+                  className="bg-[#C06B3E] hover:bg-[#a8582d] text-white text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-lg transition shadow-sm flex items-center gap-2 self-start sm:self-auto cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                   <span>ADD NEW CATEGORY</span>
@@ -1003,7 +1004,7 @@ export default function AdminDashboardPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
-                      {categories.map((cat, idx) => (
+                      {safeCategories.map((cat, idx) => (
                         <tr key={cat._id || cat.id} className="hover:bg-gray-50/50 transition-colors">
                           {/* Category Image & Info */}
                           <td className="px-6 py-4">
@@ -1028,7 +1029,7 @@ export default function AdminDashboardPage() {
                           <td className="px-4 py-4">
                             <div className="flex items-center gap-2 text-gray-500 font-mono text-[11px]">
                               <span className="text-sm">{getCategoryIconSymbol(cat.slug || cat.name)}</span>
-                              <span>/{cat.slug || cat.name.toLowerCase()}</span>
+                              <span>/{cat.slug || cat.name?.toLowerCase()}</span>
                             </div>
                           </td>
 
@@ -1058,7 +1059,7 @@ export default function AdminDashboardPage() {
                                 type="button"
                                 onClick={() => handleOpenEditCategory(cat)}
                                 title="Edit Category"
-                                className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition"
+                                className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition cursor-pointer"
                               >
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
@@ -1066,7 +1067,7 @@ export default function AdminDashboardPage() {
                                 type="button"
                                 onClick={() => handleDeleteCategory(cat)}
                                 title="Delete Category"
-                                className="p-1.5 text-rose-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition"
+                                className="p-1.5 text-rose-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition cursor-pointer"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -1097,7 +1098,7 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* Messages Container */}
-              {inquiries.length === 0 ? (
+              {safeInquiries.length === 0 ? (
                 /* Empty state matching Image 4 */
                 <div className="bg-white rounded-2xl border border-gray-200/80 p-20 text-center shadow-sm">
                   <div className="w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center mx-auto mb-4 text-gray-400 border border-gray-100">
@@ -1113,7 +1114,7 @@ export default function AdminDashboardPage() {
               ) : (
                 /* Populated list of inquiries */
                 <div className="space-y-4">
-                  {inquiries.map((inq) => (
+                  {safeInquiries.map((inq) => (
                     <div
                       key={inq._id || inq.id}
                       className={`bg-white rounded-2xl p-6 border transition-all shadow-sm ${
@@ -1151,7 +1152,7 @@ export default function AdminDashboardPage() {
                           <button
                             type="button"
                             onClick={() => handleToggleInquiryStatus(inq)}
-                            className="px-3 py-1 rounded-full text-xs font-bold border border-gray-200 text-gray-600 hover:bg-gray-50 transition"
+                            className="px-3 py-1 rounded-full text-xs font-bold border border-gray-200 text-gray-600 hover:bg-gray-50 transition cursor-pointer"
                           >
                             {inq.status === 'unread' ? 'Mark Read' : 'Mark Unread'}
                           </button>
@@ -1159,7 +1160,7 @@ export default function AdminDashboardPage() {
                           <button
                             type="button"
                             onClick={() => handleDeleteInquiry(inq)}
-                            className="p-1.5 text-rose-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition"
+                            className="p-1.5 text-rose-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition cursor-pointer"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -1226,7 +1227,7 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setIsProductModalOpen(false)}
-                  className="p-1.5 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition"
+                  className="p-1.5 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1254,7 +1255,7 @@ export default function AdminDashboardPage() {
                       onChange={(e) => setProductForm({ ...productForm, categoryName: e.target.value })}
                       className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#C06B3E] font-medium cursor-pointer"
                     >
-                      {categories.map((c) => (
+                      {safeCategories.map((c) => (
                         <option key={c._id || c.id} value={c.name}>
                           {c.name}
                         </option>
@@ -1320,7 +1321,7 @@ export default function AdminDashboardPage() {
                         key={img.url}
                         type="button"
                         onClick={() => setProductForm({ ...productForm, image: img.url })}
-                        className={`p-1 rounded-lg border shrink-0 transition ${
+                        className={`p-1 rounded-lg border shrink-0 transition cursor-pointer ${
                           productForm.image === img.url
                             ? 'border-[#C06B3E] ring-2 ring-[#C06B3E]/30 bg-amber-50'
                             : 'border-gray-200 hover:border-gray-300'
@@ -1385,13 +1386,13 @@ export default function AdminDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setIsProductModalOpen(false)}
-                    className="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition"
+                    className="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2.5 rounded-xl bg-[#C06B3E] hover:bg-[#a8582d] text-white font-bold transition shadow-sm"
+                    className="px-6 py-2.5 rounded-xl bg-[#C06B3E] hover:bg-[#a8582d] text-white font-bold transition shadow-sm cursor-pointer"
                   >
                     {editingProduct ? 'Save Changes' : 'Create Product'}
                   </button>
@@ -1426,7 +1427,7 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setIsCategoryModalOpen(false)}
-                  className="p-1.5 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition"
+                  className="p-1.5 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1507,13 +1508,13 @@ export default function AdminDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setIsCategoryModalOpen(false)}
-                    className="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition"
+                    className="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2.5 rounded-xl bg-[#C06B3E] hover:bg-[#a8582d] text-white font-bold transition shadow-sm"
+                    className="px-6 py-2.5 rounded-xl bg-[#C06B3E] hover:bg-[#a8582d] text-white font-bold transition shadow-sm cursor-pointer"
                   >
                     {editingCategory ? 'Save Changes' : 'Create Category'}
                   </button>

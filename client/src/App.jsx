@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { BakeryProvider } from './context/BakeryContext';
+import { CartProvider } from './context/CartContext';
+import { SearchProvider } from './context/SearchContext';
 
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -32,7 +34,7 @@ function MainLayout() {
 
   if (isAdminRoute) {
     return (
-      <div className="min-h-screen bg-[#112229] text-[#F8F8F2]">
+      <div className="min-h-screen">
         <ScrollToTop />
         <Routes>
           <Route path="/admin/login" element={<AdminLoginPage />} />
@@ -78,7 +80,11 @@ export default function App() {
     <Router>
       <AuthProvider>
         <BakeryProvider>
-          <MainLayout />
+          <CartProvider>
+            <SearchProvider>
+              <MainLayout />
+            </SearchProvider>
+          </CartProvider>
         </BakeryProvider>
       </AuthProvider>
     </Router>
