@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Apfel Grotezk Fonts from Reference Site */
+@font-face {
+  font-family: 'Apfel Grotezk';
+  src: url('/fonts/ApfelGrotezk-Regular.woff2') format('woff2');
+  font-weight: 300;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Apfel Grotezk';
+  src: url('/fonts/ApfelGrotezk-Mittel.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Apfel Grotezk';
+  src: url('/fonts/ApfelGrotezk-Fett.woff2') format('woff2');
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Apfel Grotezk';
+  src: url('/fonts/ApfelGrotezk-Satt.woff2') format('woff2');
+  font-weight: 800;
+  font-display: swap;
+}
+
+:root {
+  --pink: #FFA7EE;
+  --beige: #F8F8F2;
+  --blue: #147C98;
+  --dark: #112229;
+  --surface: #FFDAED;
+  --text-font: 'Apfel Grotezk', system-ui, sans-serif;
+  --hero-font: 'Apfel Grotezk', system-ui, sans-serif;
+  --title-font: 'Apfel Grotezk', system-ui, sans-serif;
+  --anim-font: 'Apfel Grotezk', system-ui, sans-serif;
+  --menu-text-color: var(--beige);
+  --ulu-curve: cubic-bezier(.28, .71, 0, .98);
+}
+
+body {
+  font-family: var(--title-font);
+  color: var(--dark);
+  background-color: #F8F8F2;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background-color: #FFA7EE;
+  color: #112229;
+}
+
+/* Marquee Scroll Animations */
+@keyframes MarqueeScroll {
+  0% { transform: translate(0); }
+  100% { transform: translate(-50%); }
+}
+
+.animate-marquee-scroll {
+  display: flex;
+  width: max-content;
+  animation: MarqueeScroll 20s linear infinite;
+}
+
+.animate-marquee-reverse {
+  display: flex;
+  width: max-content;
+  animation: MarqueeScroll 34s linear infinite reverse;
+}
+
+/* Continuous Horizontal Arches Gallery Animation (Never stops on hover) */
+@keyframes ArchesScroll {
+  0% { transform: translate(0); }
+  100% { transform: translate(-50%); }
+}
+
+.animate-arches-scroll {
+  display: flex;
+  width: max-content;
+  animation: ArchesScroll 35s linear infinite;
+}
+
+/* Continuous Customer Reviews Carousel Animation (Moves continuously like arches) */
+@keyframes ReviewsScroll {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
+}
+
+.animate-reviews-scroll {
+  display: flex;
+  width: max-content;
+  animation: ReviewsScroll 42s linear infinite;
+  will-change: transform;
+}
+
+/* Curved Window Arches */
+.window-arch {
+  border-radius: 500px 500px 0 0;
+}
+
+.bestseller-arch {
+  border-radius: 500px 500px 80px 80px;
+}
+
+/* Nav letter hover scale and color */
+.nav-letter {
+  display: inline-block;
+  transition: transform 0.4s var(--ulu-curve), color 0.2s ease;
+}
+.nav-letter:hover {
+  transform: scale(1.18);
+  color: #FFA7EE !important;
+}
+
+/* Dual image reveal */
+.dual-img-container .img-primary {
+  transition: opacity 0.4s var(--ulu-curve), transform 0.6s var(--ulu-curve);
+}
+.dual-img-container:hover .img-primary {
+  opacity: 0;
+}
+.dual-img-container .img-secondary {
+  opacity: 0;
+  transition: opacity 0.4s var(--ulu-curve), transform 0.6s var(--ulu-curve);
+}
+.dual-img-container:hover .img-secondary {
+  opacity: 1;
+}

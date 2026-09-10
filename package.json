@@ -1,0 +1,14 @@
+{
+  "name": "cozy-crumbs-mern",
+  "version": "1.0.0",
+  "description": "Cozy Crumbs Artisanal Bakery Customer Website - Exact Replica of Bernice Bakery UI/UX on MERN Stack",
+  "scripts": {
+    "dev": "npm --prefix client run dev",
+    "dev:all": "concurrently \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
+    "build": "npm --prefix client run build",
+    "server": "npm --prefix server run dev"
+  },
+  "keywords": ["bakery", "mern", "react", "vite", "tailwind"],
+  "author": "Cozy Crumbs",
+  "license": "ISC"
+}
