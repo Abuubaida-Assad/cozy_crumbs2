@@ -62,6 +62,7 @@ export default function AdminDashboardPage() {
   // Modals
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [deletingProduct, setDeletingProduct] = useState(null);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
 
@@ -233,13 +234,19 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleDeleteProduct = async (prod) => {
-    if (!window.confirm(`Are you sure you want to delete "${prod.name}"?`)) return;
+  const handleDeleteProduct = (prod) => {
+    setDeletingProduct(prod);
+  };
+
+  const confirmDeleteProduct = async () => {
+    if (!deletingProduct) return;
     try {
-      await deleteProduct(prod._id || prod.id);
-      showToast(`Removed "${prod.name}" from catalog`);
+      await deleteProduct(deletingProduct._id || deletingProduct.id, deletingProduct.slug);
+      showToast(`Removed "${deletingProduct.name}" from catalog`);
     } catch (err) {
       showToast(err.message || 'Failed to delete', 'error');
+    } finally {
+      setDeletingProduct(null);
     }
   };
 
@@ -1500,6 +1507,49 @@ export default function AdminDashboardPage() {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* 5. MODAL: DELETE PRODUCT CONFIRMATION                                     */}
+        {/* ========================================================================= */}
+        {deletingProduct && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.92 }}
+              className="bg-white rounded-3xl p-6 sm:p-7 max-w-sm w-full border border-gray-100 shadow-2xl space-y-5"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto shadow-xs">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div className="text-center space-y-1.5">
+                <h3 className="text-base font-bold text-[#1B130E]">
+                  Delete Product?
+                </h3>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Are you sure you want to remove <span className="font-bold text-gray-800">"{deletingProduct.name}"</span>? It will be removed immediately from the bakery catalog and live menu.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setDeletingProduct(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-xs font-bold hover:bg-gray-50 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDeleteProduct}
+                  className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition shadow-sm cursor-pointer"
+                >
+                  Yes, Delete
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

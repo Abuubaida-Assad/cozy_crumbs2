@@ -5,14 +5,14 @@ export const siteConfig = {
   tagline: "Baking Joy, Creating Sweet Memories.",
   subTagline: "Artisanal Bakery Handcrafted Daily.",
   philosophy: "From a small kitchen to a place where every celebration gets a little sweeter.",
-  phone: "+91 7098322796",
+  phone: "+91 7093322796",
   email: "cozycrumbs6767@gmail.com",
   address: "Gachibowli TNGOS Colony, Hyderabad, Telangana",
   hours: "Monday – Sunday: 7:30 AM – 10:30 PM",
   socials: [
     { name: "Instagram", href: "https://instagram.com" },
     { name: "Facebook", href: "https://facebook.com" },
-    { name: "WhatsApp", href: "https://wa.me/917098322796" },
+    { name: "WhatsApp", href: "https://wa.me/917093322796" },
   ]
 };
 

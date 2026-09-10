@@ -95,7 +95,7 @@ export default function CelebrateSection() {
         <div className="absolute -bottom-8 sm:-bottom-10 left-1/2 -translate-x-1/2 z-10">
           <AnimatedButton
             as="a"
-            href="https://wa.me/917098322796?text=Hi%20Cozy%20Crumbs!%20I%20would%20like%20to%20order%20a%20custom%20celebration%20cake."
+            href="https://wa.me/917093322796?text=Hi%20Cozy%20Crumbs!%20I%20would%20like%20to%20order%20a%20custom%20celebration%20cake."
             target="_blank"
             rel="noreferrer"
             scaleHover={1.06}
@@ -113,12 +113,12 @@ export default function CelebrateSection() {
         </h3>
         <div>
           <a
-            href="https://wa.me/917098322796?text=Hi%20Cozy%20Crumbs!%20I%20would%20like%20to%20order%20a%20custom%20cake."
+            href="https://wa.me/917093322796?text=Hi%20Cozy%20Crumbs!%20I%20would%20like%20to%20order%20a%20custom%20cake."
             target="_blank"
             rel="noreferrer"
             className="inline-block font-title font-extrabold text-sm sm:text-lg md:text-xl uppercase text-[#147C98] hover:text-[#112229] tracking-wider transition-colors hover:scale-102 transform duration-200"
           >
-            EGGLESS & REGULAR CAKE CREATIONS • WHATSAPP: +91 7098322796
+            EGGLESS & REGULAR CAKE CREATIONS • WHATSAPP: +91 7093322796
           </a>
         </div>
       </Reveal>

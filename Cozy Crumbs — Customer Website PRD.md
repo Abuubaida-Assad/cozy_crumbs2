@@ -4,7 +4,7 @@
 **Document Version:** 1.0  
 **Project:** Cozy Crumbs Artisanal Bakery Website  
 **Status:** Product Requirements Document  
-**Primary Contact:** cozycrumbs6767@gmail.com | +91 7098322796  
+**Primary Contact:** cozycrumbs6767@gmail.com | +91 7093322796  
 **Location:** Gachibowli TNGOS Colony, Hyderabad, Telangana
 
 ---
@@ -564,7 +564,7 @@ Handcrafted baking, celebration cakes and daily artisanal breads.
 
 Phone:
 
-+91 7098322796
++91 7093322796
 
 Email:
 
@@ -743,7 +743,7 @@ COZY CRUMBS
 
 ## Contact
 
-7098322796
+7093322796
 
 cozycrumbs6767@gmail.com
 

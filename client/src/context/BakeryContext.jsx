@@ -181,10 +181,13 @@ export const BakeryProvider = ({ children }) => {
       if (prodRes && prodRes.ok) {
         const prodData = await prodRes.json();
         if (prodData.success && Array.isArray(prodData.data) && prodData.data.length > 0) {
-          const normProds = prodData.data.map(normalizeProduct);
+          const deletedIds = new Set(JSON.parse(localStorage.getItem('cozy_crumbs_deleted_products') || '[]'));
+          const normProds = prodData.data
+            .map(normalizeProduct)
+            .filter(p => !deletedIds.has(String(p._id)) && !deletedIds.has(String(p.id)) && !deletedIds.has(String(p.slug)));
           const apiIds = new Set(normProds.map(p => String(p._id)));
           setProducts((prev) => {
-            const localOnly = (prev || []).filter(p => !apiIds.has(String(p._id)) && !apiIds.has(String(p.id)) && String(p._id).startsWith('prod_'));
+            const localOnly = (prev || []).filter(p => !apiIds.has(String(p._id)) && !apiIds.has(String(p.id)) && String(p._id).startsWith('prod_') && !deletedIds.has(String(p._id)));
             const merged = [...normProds, ...localOnly];
             try {
               localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(merged));
@@ -304,10 +307,33 @@ export const BakeryProvider = ({ children }) => {
     return { success: true };
   };
 
-  const deleteProduct = async (id) => {
+  const deleteProduct = async (id, slug) => {
     const token = localStorage.getItem('cozy_crumbs_admin_token');
-    const updated = products.filter(p => p._id !== id && p.id !== id);
-    persistProducts(updated);
+
+    // Persistently track deleted IDs
+    try {
+      const deleted = JSON.parse(localStorage.getItem('cozy_crumbs_deleted_products') || '[]');
+      if (id) deleted.push(String(id));
+      if (slug) deleted.push(String(slug));
+      localStorage.setItem('cozy_crumbs_deleted_products', JSON.stringify(Array.from(new Set(deleted))));
+    } catch (e) {}
+
+    // Update state immediately
+    setProducts((prev) => {
+      const updated = prev.filter(
+        (p) =>
+          String(p._id) !== String(id) &&
+          String(p.id) !== String(id) &&
+          (!slug || String(p.slug) !== String(slug))
+      );
+      try {
+        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(updated));
+        window.dispatchEvent(new CustomEvent('cozy_crumbs_data_sync', { detail: { type: 'products' } }));
+      } catch (err) {
+        console.warn(err);
+      }
+      return updated;
+    });
 
     if (token) {
       try {
@@ -316,7 +342,7 @@ export const BakeryProvider = ({ children }) => {
           headers: { Authorization: `Bearer ${token}` },
         });
       } catch (e) {
-        console.warn('Product DELETE failed, saved to local store:', e);
+        console.warn('Product DELETE failed, removed locally:', e);
       }
     }
     return { success: true };

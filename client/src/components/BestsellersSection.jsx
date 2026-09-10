@@ -100,7 +100,7 @@ export default function BestsellersSection() {
                 <div className="pt-2">
                   <AnimatedButton
                     as="a"
-                    href={`https://wa.me/917098322796?text=${encodeURIComponent(item.waText)}`}
+                    href={`https://wa.me/917093322796?text=${encodeURIComponent(item.waText)}`}
                     target="_blank"
                     rel="noreferrer"
                     className="w-full py-4 px-6 rounded-pill bg-[#FFA7EE] text-[#112229] font-title font-extrabold text-sm uppercase tracking-wider text-center block hover:bg-[#112229] hover:text-[#F8F8F2] transition-colors duration-300"

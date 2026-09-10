@@ -84,7 +84,7 @@ export default function CartDrawer() {
   const handleWhatsAppOrder = () => {
     const itemsList = cart.map(i => `• ${i.product.name} (x${i.quantity}) - ₹${i.product.price * i.quantity}`).join('%0A');
     const msg = `*New Order Inquiry — Cozy Crumbs*%0A%0A*Fulfillment:* ${fulfillmentType === 'delivery' ? 'Delivery' : 'Pickup'}%0A*Date:* ${selectedDate}%0A*Time:* ${selectedTime}%0A${fulfillmentType === 'delivery' ? `*Postal Code:* ${postalCode}%0A` : `*Store:* ${selectedStore}%0A`}*Items:*%0A${itemsList}%0A%0A*Subtotal:* ₹${subtotal}%0A*Notes:* ${encodeURIComponent(orderNotes || 'None')}`;
-    window.open(`https://wa.me/917098322796?text=${msg}`, '_blank');
+    window.open(`https://wa.me/917093322796?text=${msg}`, '_blank');
   };
 
   const freeDeliveryThreshold = 800;

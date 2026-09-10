@@ -47,12 +47,12 @@ export default function Footer() {
               </p>
               <p>
                 <a
-                  href="https://wa.me/917098322796?text=Hi%20Cozy%20Crumbs!%20I%20would%20like%20to%20place%20an%20order."
+                  href="https://wa.me/917093322796?text=Hi%20Cozy%20Crumbs!%20I%20would%20like%20to%20place%20an%20order."
                   target="_blank"
                   rel="noreferrer"
                   className="hover:text-[#FFA7EE] transition-colors underline font-bold"
                 >
-                  +91 7098322796 (Call / WhatsApp)
+                  +91 7093322796 (Call / WhatsApp)
                 </a>
               </p>
             </div>
@@ -113,7 +113,7 @@ export default function Footer() {
             <div className="pt-3">
               <AnimatedButton
                 as="a"
-                href="https://wa.me/917098322796?text=Hi%20Cozy%20Crumbs!%20I%20would%20like%20to%20place%20an%20order."
+                href="https://wa.me/917093322796?text=Hi%20Cozy%20Crumbs!%20I%20would%20like%20to%20place%20an%20order."
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center font-title font-extrabold text-xs uppercase tracking-wider px-5 py-2.5 rounded-pill bg-[#FFA7EE] text-[#112229] hover:bg-white transition-colors shadow-md"
@@ -125,17 +125,17 @@ export default function Footer() {
         </StaggerContainer>
 
         {/* Fully Visible Giant Brand Typography with Viewport Reveal - Scaled SVG for 100% Visibility on all screens */}
-        <div className="w-full pt-6 pb-2 text-center select-none flex justify-center items-center">
+        <div className="w-full pt-8 pb-3 text-center select-none flex justify-center items-center">
           <motion.div
-            initial={shouldReduceMotion ? {} : { opacity: 0, y: 40 }}
+            initial={shouldReduceMotion ? {} : { opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: false, amount: 0.2 }}
             transition={transitions.editorial}
-            className="w-full max-w-7xl mx-auto flex justify-center items-center"
+            className="w-full max-w-7xl mx-auto flex justify-center items-center px-1"
           >
             <svg
-              className="w-full h-auto max-h-20 sm:max-h-28 md:max-h-40 select-none overflow-visible"
-              viewBox="0 0 980 115"
+              className="w-full h-auto max-h-24 sm:max-h-36 md:max-h-48 lg:max-h-60 select-none overflow-visible"
+              viewBox="0 0 1100 135"
               preserveAspectRatio="xMidYMid meet"
               aria-label="COZY CRUMBS"
             >
@@ -145,8 +145,8 @@ export default function Footer() {
                 dominantBaseline="central"
                 textAnchor="middle"
                 className="font-hero font-black uppercase fill-[#F8F8F2]"
-                fontSize="102"
-                letterSpacing="-0.02em"
+                fontSize="122"
+                letterSpacing="-0.01em"
               >
                 COZY CRUMBS
               </text>
@@ -159,12 +159,12 @@ export default function Footer() {
           <p>© 2026 Cozy Crumbs Artisanal Bakery. All rights reserved.</p>
           <div className="flex gap-4 mt-2 sm:mt-0 items-center">
             <a
-              href="https://wa.me/917098322796"
+              href="https://wa.me/917093322796"
               target="_blank"
               rel="noreferrer"
               className="hover:text-white font-bold"
             >
-              Order Desk: +91 7098322796
+              Order Desk: +91 7093322796
             </a>
             <span className="text-white/40">•</span>
             <Link to="/admin" className="hover:text-[#FFA7EE] transition-colors font-medium">

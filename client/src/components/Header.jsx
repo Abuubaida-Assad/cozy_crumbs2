@@ -100,12 +100,12 @@ export default function Header({ onOpenMobileMenu }) {
         <div className="flex items-center gap-4">
           <AnimatedButton
             as="a"
-            href="https://wa.me/917098322796?text=Hi%20Cozy%20Crumbs!%20I%20would%20like%20to%20place%20an%20order."
+            href="https://wa.me/917093322796?text=Hi%20Cozy%20Crumbs!%20I%20would%20like%20to%20place%20an%20order."
             target="_blank"
             rel="noreferrer"
-            className="hidden sm:inline-flex items-center font-title font-extrabold text-xs uppercase tracking-wider px-5 py-2.5 rounded-pill bg-[#FFA7EE] text-[#112229] hover:bg-white hover:text-[#112229] transition-colors shadow-md border border-[#FFA7EE]/30"
+            className="font-title font-bold text-xs uppercase px-5 py-2.5 rounded-pill bg-[#FFA7EE] text-[#112229] hover:bg-[#112229] hover:text-[#F8F8F2] transition-colors shadow-sm"
           >
-            ORDER: +91 7098322796
+            ORDER: +91 7093322796
           </AnimatedButton>
 
           {/* Mobile Hamburger Trigger */}

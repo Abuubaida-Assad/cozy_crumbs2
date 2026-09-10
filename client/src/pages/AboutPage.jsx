@@ -84,12 +84,12 @@ export default function AboutPage() {
             <div className="pt-2">
               <AnimatedButton
                 as="a"
-                href="https://wa.me/917098322796?text=Hi%20Cozy%20Crumbs!%20I%20would%20like%20to%20know%20more%20about%20your%20custom%20cakes."
+                href="https://wa.me/917093322796?text=Hi%20Cozy%20Crumbs!%20I%20would%20like%20to%20know%20more%20about%20your%20custom%20cakes."
                 target="_blank"
                 rel="noreferrer"
                 className="font-title text-sm font-bold uppercase text-[#147C98] hover:underline"
               >
-                CONNECT WITH OUR MASTER BAKER: +91 7098322796 →
+                CONNECT WITH OUR MASTER BAKER: +91 7093322796 →
               </AnimatedButton>
             </div>
           </Reveal>

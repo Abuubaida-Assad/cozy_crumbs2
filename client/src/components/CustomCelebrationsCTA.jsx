@@ -33,7 +33,7 @@ export default function CustomCelebrationsCTA() {
               </Link>
 
               <a
-                href="https://wa.me/917098322796?text=Hi%20Cozy%20Crumbs!%20I%20would%20like%20to%20discuss%20a%20custom%20celebration%20cake."
+                href="https://wa.me/917093322796?text=Hi%20Cozy%20Crumbs!%20I%20would%20like%20to%20discuss%20a%20custom%20celebration%20cake."
                 target="_blank"
                 rel="noreferrer"
                 className="px-8 py-4 rounded-pill bg-transparent border-2 border-[#FFA7EE]/50 hover:border-[#FFA7EE] text-[#F8F8F2] font-title font-bold text-sm uppercase tracking-wider transition-colors inline-flex items-center gap-2"

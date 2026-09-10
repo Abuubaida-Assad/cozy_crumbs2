@@ -158,12 +158,12 @@ export default function ProductModal() {
           {/* Action Row */}
           <div className="space-y-3 pt-4 border-t border-[#112229]/10">
             <a
-              href={`https://wa.me/917098322796?text=Hi%20Cozy%20Crumbs!%20I%20would%20like%20to%20order%20the%20${encodeURIComponent(product.name)}.`}
+              href={`https://wa.me/917093322796?text=Hi%20Cozy%20Crumbs!%20I%20would%20like%20to%20order%20the%20${encodeURIComponent(product.name)}.`}
               target="_blank"
               rel="noreferrer"
               className="w-full py-3.5 px-6 rounded-pill bg-[#FFA7EE] hover:bg-[#112229] hover:text-[#F8F8F2] text-[#112229] font-title font-extrabold text-sm uppercase tracking-wider transition-colors duration-300 shadow-md flex items-center justify-center gap-2"
             >
-              ORDER VIA WHATSAPP (+91 7098322796)
+              ORDER VIA WHATSAPP (+91 7093322796)
             </a>
           </div>
         </div>

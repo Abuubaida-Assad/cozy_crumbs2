@@ -49,8 +49,8 @@ export default function ContactPage() {
           </h1>
           <p className="text-sm md:text-base text-[#112229]/80 font-medium max-w-xl mx-auto">
             To order cakes, catering, or discuss bespoke flavors, call us directly at{' '}
-            <a href="tel:+917098322796" className="underline font-bold text-[#147C98]">
-              +91 7098322796
+            <a href="tel:+917093322796" className="underline font-bold text-[#147C98]">
+              +91 7093322796
             </a>{' '}
             or submit a message below.
           </p>
@@ -74,10 +74,10 @@ export default function ContactPage() {
                 <div className="pt-4 flex justify-center gap-3">
                   <AnimatedButton
                     as="a"
-                    href="tel:+917098322796"
+                    href="tel:+917093322796"
                     className="px-8 py-3.5 rounded-pill bg-[#112229] text-[#F8F8F2] font-title font-bold text-xs uppercase"
                   >
-                    Direct Call: +91 7098322796
+                    Direct Call: +91 7093322796
                   </AnimatedButton>
                 </div>
               </div>
@@ -181,14 +181,14 @@ export default function ContactPage() {
               <div className="pt-2 space-y-3 text-sm">
                 <div className="flex items-center justify-between border-b border-white/10 pb-2">
                   <span className="text-[#FFA7EE] font-bold uppercase text-xs">Direct Phone:</span>
-                  <a href="tel:+917098322796" className="font-bold underline text-white hover:text-[#FFA7EE]">
-                    +91 7098322796
+                  <a href="tel:+917093322796" className="font-bold underline text-white hover:text-[#FFA7EE]">
+                    +91 7093322796
                   </a>
                 </div>
                 <div className="flex items-center justify-between border-b border-white/10 pb-2">
                   <span className="text-[#FFA7EE] font-bold uppercase text-xs">WhatsApp:</span>
                   <a
-                    href="https://wa.me/917098322796"
+                    href="https://wa.me/917093322796"
                     target="_blank"
                     rel="noreferrer"
                     className="font-bold underline text-white hover:text-[#FFA7EE]"
@@ -211,16 +211,16 @@ export default function ContactPage() {
               <div className="pt-4 space-y-3">
                 <AnimatedButton
                   as="a"
-                  href="https://wa.me/917098322796?text=Hi%20Cozy%20Crumbs!%20I%20would%20like%20to%20place%20an%20order."
+                  href="https://wa.me/917093322796?text=Hi%20Cozy%20Crumbs!%20I%20would%20like%20to%20place%20an%20order."
                   target="_blank"
                   rel="noreferrer"
                   className="w-full py-4 rounded-pill bg-[#FFA7EE] text-[#112229] font-title font-extrabold text-xs uppercase tracking-wider block text-center hover:bg-white transition-colors shadow-lg"
                 >
-                  WHATSAPP: +91 7098322796
+                  WHATSAPP: +91 7093322796
                 </AnimatedButton>
                 <AnimatedButton
                   as="a"
-                  href="tel:+917098322796"
+                  href="tel:+917093322796"
                   className="w-full py-3.5 rounded-pill bg-white/10 text-white font-title font-bold text-xs uppercase tracking-wider block text-center hover:bg-white hover:text-[#112229] transition-colors border border-white/20"
                 >
                   DIRECT PHONE CALL

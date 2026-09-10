@@ -47,7 +47,7 @@ export default function MenuPage() {
             Our Bakery Catalog
           </h1>
           <p className="mt-3 text-sm md:text-base text-[#112229]/80 font-medium max-w-xl mx-auto">
-            Fresh celebration cakes, morning sourdough loaves, and tea-time specials. To place an order, call our bakery desk directly at <a href="tel:+917098322796" className="font-bold underline text-[#147C98]">+91 7098322796</a>.
+            Fresh celebration cakes, morning sourdough loaves, and tea-time specials. To place an order, call our bakery desk directly at <a href="tel:+917093322796" className="font-bold underline text-[#147C98]">+91 7093322796</a>.
           </p>
         </Reveal>
 
@@ -298,7 +298,7 @@ export default function MenuPage() {
                     <div className="pt-4 border-t border-[#112229]/10 space-y-3">
                       <AnimatedButton
                         as="a"
-                        href={`https://wa.me/917098322796?text=${encodeURIComponent(
+                        href={`https://wa.me/917093322796?text=${encodeURIComponent(
                           `Hi Cozy Crumbs! I would like to inquire about/order the "${selectedProduct.name}".`
                         )}`}
                         target="_blank"
