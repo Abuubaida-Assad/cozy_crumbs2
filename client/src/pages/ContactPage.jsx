@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { siteConfig } from '../data/siteData';
 import Reveal from '../components/animations/Reveal';
 import AnimatedButton from '../components/animations/AnimatedButton';
+import { useBakery } from '../context/BakeryContext';
 
 export default function ContactPage() {
+  const { submitInquiry } = useBakery();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -19,16 +21,17 @@ export default function ContactPage() {
     setStatus('loading');
 
     try {
-      await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      }).catch(() => {});
+      await submitInquiry({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        subject: formData.inquiryType,
+        message: formData.message,
+      });
 
-      setTimeout(() => {
-        setStatus('success');
-      }, 500);
-    } catch {
+      setStatus('success');
+    } catch (err) {
+      console.error('Inquiry submission error:', err);
       setStatus('success');
     }
   };

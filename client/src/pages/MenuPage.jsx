@@ -1,12 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { allProducts, allCategories } from '../data/productsData';
+import { useBakery } from '../context/BakeryContext';
 import DietaryBadge from '../components/DietaryBadge';
 import AnimatedButton from '../components/animations/AnimatedButton';
 import Reveal from '../components/animations/Reveal';
 
 export default function MenuPage() {
+  const { products, categories: liveCategories } = useBakery();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialCat = searchParams.get('category') || 'All';
   const [selectedCategory, setSelectedCategory] = useState(initialCat);
@@ -14,23 +15,25 @@ export default function MenuPage() {
   const [selectedProduct, setSelectedProduct] = useState(null);
 
   const categories = useMemo(() => {
-    return ['All', ...allCategories.map((c) => c.name)];
-  }, []);
+    const list = (liveCategories || []).filter(c => c.isActive !== false).map((c) => c.name);
+    return ['All', ...list];
+  }, [liveCategories]);
 
   const filteredProducts = useMemo(() => {
-    return allProducts.filter((p) => {
-      if (selectedCategory !== 'All' && p.categoryName !== selectedCategory) return false;
+    return (products || []).filter((p) => {
+      if (p.isAvailable === false) return false;
+      if (selectedCategory !== 'All' && p.categoryName?.toLowerCase() !== selectedCategory.toLowerCase()) return false;
       if (searchQuery.trim() !== '') {
         const q = searchQuery.toLowerCase();
         return (
           p.name.toLowerCase().includes(q) ||
           p.description.toLowerCase().includes(q) ||
-          p.categoryName.toLowerCase().includes(q)
+          p.categoryName?.toLowerCase().includes(q)
         );
       }
       return true;
     });
-  }, [selectedCategory, searchQuery]);
+  }, [products, selectedCategory, searchQuery]);
 
   return (
     <div className="pt-28 md:pt-36 pb-24 px-[4vw] bg-[#F8F8F2] min-h-screen">

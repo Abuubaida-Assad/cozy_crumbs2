@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { BakeryProvider } from './context/BakeryContext';
 
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -76,7 +77,9 @@ export default function App() {
   return (
     <Router>
       <AuthProvider>
-        <MainLayout />
+        <BakeryProvider>
+          <MainLayout />
+        </BakeryProvider>
       </AuthProvider>
     </Router>
   );

@@ -1,26 +1,28 @@
 import React, { useState, useMemo } from 'react';
-import { allProducts, allCategories } from '../data/productsData';
+import { useBakery } from '../context/BakeryContext';
 import { useCart } from '../context/CartContext';
 import DietaryBadge from './DietaryBadge';
 
 export default function CollectionBrowser({ initialCategory = 'All', showHeader = true, limit = null }) {
+  const { products, categories: liveCategories } = useBakery();
   const [activeCategory, setActiveCategory] = useState(initialCategory);
   const { openProductModal, addToCart } = useCart();
 
   const categories = useMemo(() => {
-    return ['All', ...allCategories.map(c => c.name)];
-  }, []);
+    const list = (liveCategories || []).filter(c => c.isActive !== false).map(c => c.name);
+    return ['All', ...list];
+  }, [liveCategories]);
 
   const filteredProducts = useMemo(() => {
-    let list = allProducts;
+    let list = (products || []).filter(p => p.isAvailable !== false);
     if (activeCategory !== 'All') {
-      list = list.filter(p => p.categoryName === activeCategory);
+      list = list.filter(p => p.categoryName?.toLowerCase() === activeCategory.toLowerCase());
     }
     if (limit) {
       return list.slice(0, limit);
     }
     return list;
-  }, [activeCategory, limit]);
+  }, [products, activeCategory, limit]);
 
   return (
     <section className="py-20 md:py-28 px-[4vw] bg-white">
