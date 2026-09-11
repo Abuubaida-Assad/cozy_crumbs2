@@ -115,14 +115,13 @@ export default function BestsellersSection() {
 
         {/* View All Button Side / Bottom with Viewport Reveal */}
         <Reveal y={20} amount={0.2} className="mt-12 flex justify-end">
-          <AnimatedButton
-            as={Link}
+          <Link
             to="/menu"
-            className="inline-flex items-center gap-3 px-8 py-4 rounded-pill bg-[#112229] text-[#F8F8F2] hover:bg-[#FFA7EE] hover:text-[#112229] font-title font-extrabold text-sm uppercase tracking-wider transition-colors duration-300 shadow-md group"
+            className="inline-flex items-center gap-3 px-8 py-4 rounded-pill bg-[#112229] text-[#F8F8F2] hover:bg-[#FFA7EE] hover:text-[#112229] font-title font-extrabold text-sm uppercase tracking-wider transition-all duration-300 shadow-md hover:scale-[1.03] active:scale-[0.97] group cursor-pointer"
           >
             <span>VIEW ALL CREATIONS</span>
             <span className="transform group-hover:translate-x-1.5 transition-transform">→</span>
-          </AnimatedButton>
+          </Link>
         </Reveal>
       </div>
     </section>
