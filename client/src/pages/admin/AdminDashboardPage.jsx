@@ -913,12 +913,9 @@ export default function AdminDashboardPage() {
                                 <span>Eggless</span>
                               </div>
                             ) : (
-                              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border border-rose-300 bg-rose-50 text-rose-800 text-[10px] font-bold">
-                                <div className="w-3 h-3 border border-rose-600 flex items-center justify-center p-0.5 rounded-[2px]">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-rose-600" />
-                                </div>
-                                <span>Contains Egg</span>
-                              </div>
+                              <span className="text-[10px] text-gray-400 font-medium px-2 py-0.5 rounded bg-gray-50 border border-gray-200">
+                                Regular
+                              </span>
                             )}
                           </td>
 
