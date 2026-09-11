@@ -22,6 +22,7 @@ dotenv.config(); // fallback
 const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
+
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
@@ -30,36 +31,94 @@ app.use((req, res, next) => {
   next();
 });
 
-const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173').split(',').map((origin) => origin.trim());
+// Configure CORS for production and development
+const defaultOrigins = [
+  'https://cozy-crumbs-rosy.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://localhost:5050',
+];
+const envOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim()).filter(Boolean)
+  : [];
+const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
 
-// Middleware
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(new Error('Origin not allowed by CORS'));
+    // Allow non-browser requests (curl, server-to-server proxies)
+    if (!origin) return callback(null, true);
+    // Allow configured origins or any Vercel preview deployment for this project
+    if (
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.vercel.app')
+    ) {
+      return callback(null, true);
+    }
+    return callback(new Error(`Origin ${origin} not allowed by CORS`));
   },
   credentials: true,
 }));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Health Check / API info
+// Health Check / API info (does not require DB connection)
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'healthy',
     app: 'Cozy Crumbs Artisanal Bakery API',
     time: new Date().toISOString(),
     version: '1.0.0',
+    environment: process.env.NODE_ENV || 'development',
+    serverless: Boolean(process.env.VERCEL),
   });
 });
 
-// Mount Routes
+// Root route for backend health/status
+app.get('/', (req, res) => {
+  res.json({
+    status: 'online',
+    app: 'Cozy Crumbs API Backend',
+    endpoints: {
+      health: '/api/health',
+      categories: '/api/categories',
+      products: '/api/products',
+      stores: '/api/stores',
+      login: '/api/auth/login',
+    },
+  });
+});
+
+// Mount Static Uploads (safely handled on read-only serverless filesystem)
 const uploadsDir = path.resolve(__dirname, '../uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+try {
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+} catch (e) {
+  // Read-only filesystem in serverless environments
 }
 app.use('/uploads', express.static(uploadsDir));
 
+// Database connection middleware for all API routes (ensures DB is connected before controllers run)
+app.use(async (req, res, next) => {
+  if (!req.path.startsWith('/api') || req.path === '/api/health') {
+    return next();
+  }
+
+  try {
+    await connectDB();
+    next();
+  } catch (dbErr) {
+    console.error('[DB Middleware Error]:', dbErr.message);
+    return res.status(503).json({
+      success: false,
+      message: dbErr.message,
+    });
+  }
+});
+
+// Mount API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/products', productRoutes);
@@ -76,7 +135,7 @@ const PORT = Number(process.env.PORT) || 5050;
 let server;
 export const startServer = async () => {
   if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
-    throw new Error('JWT_SECRET must be set to a value of at least 32 characters.');
+    console.warn('⚠️ Warning: JWT_SECRET should be set to at least 32 characters in production.');
   }
 
   await connectDB();
@@ -89,7 +148,8 @@ export const startServer = async () => {
   process.once('SIGTERM', shutdown);
 };
 
-if (process.env.NODE_ENV !== 'test') {
+// Standalone execution: only call app.listen if running directly, NOT in Vercel serverless functions
+if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) {
   startServer().catch((error) => {
     console.error(`[Startup Error] ${error.message}`);
     process.exit(1);

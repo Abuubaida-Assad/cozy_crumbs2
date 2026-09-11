@@ -110,7 +110,27 @@ export default function AdminLoginPage() {
           >
             {loading ? 'Authenticating...' : 'Sign In To Dashboard →'}
           </button>
+
+          {/* Quick Demo Credentials Autofill */}
+          <button
+            type="button"
+            onClick={() => {
+              setEmail('cozycrumbs6767@gmail.com');
+              setPassword('@cozycrumbs6767@');
+              setErrorMessage('');
+            }}
+            className="w-full py-2.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[#ECE5D8]/80 hover:text-white text-[11px] font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer mt-1"
+          >
+            <span>🔑 Auto-fill Default Admin Credentials</span>
+          </button>
         </form>
+
+        {/* Credentials reminder badge */}
+        <div className="mt-4 p-3 rounded-xl bg-white/[0.03] border border-white/5 text-center text-[10px] text-[#ECE5D8]/50">
+          <span>Admin: <strong className="text-[#ECE5D8]/80 font-mono">cozycrumbs6767@gmail.com</strong></span>
+          <span className="mx-2">•</span>
+          <span>Password: <strong className="text-[#ECE5D8]/80 font-mono">@cozycrumbs6767@</strong></span>
+        </div>
 
         {/* Back Link */}
         <div className="mt-6 text-center">

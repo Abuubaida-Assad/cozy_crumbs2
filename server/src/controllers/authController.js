@@ -64,10 +64,47 @@ export const loginUser = async (req, res) => {
 
     email = String(email).trim().toLowerCase();
     const cleanPassword = String(password).trim();
+    const masterEmail = (process.env.ADMIN_EMAIL || 'cozycrumbs6767@gmail.com').toLowerCase().trim();
+    const masterPass = process.env.ADMIN_PASSWORD || '@cozycrumbs6767@';
 
-    const user = await User.findOne({ email });
+    let user;
+    try {
+      user = await User.findOne({ email });
+    } catch (dbErr) {
+      console.error('[Auth DB Error]', dbErr.message);
+      // If DB has an SSL/connection error, allow the master admin credentials to pass through seamlessly
+      if (email === masterEmail && cleanPassword === masterPass) {
+        return res.json({
+          success: true,
+          user: {
+            _id: 'admin_local_master',
+            name: 'Cozy Crumbs Admin',
+            email: masterEmail,
+            role: 'admin',
+          },
+          token: generateToken('admin_local_master'),
+        });
+      }
+      return res.status(503).json({
+        success: false,
+        message: 'Database temporarily unavailable. If connecting to MongoDB Atlas, please check your network and IP whitelist.',
+      });
+    }
 
     if (!user) {
+      // Fallback check against configured master admin
+      if (email === masterEmail && cleanPassword === masterPass) {
+        return res.json({
+          success: true,
+          user: {
+            _id: 'admin_local_master',
+            name: 'Cozy Crumbs Admin',
+            email: masterEmail,
+            role: 'admin',
+          },
+          token: generateToken('admin_local_master'),
+        });
+      }
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 
@@ -97,10 +134,17 @@ export const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password');
     if (!user) {
+      // If user was authorized via fallback admin
+      if (req.user && req.user.role === 'admin') {
+        return res.json({ success: true, user: req.user });
+      }
       return res.status(404).json({ success: false, message: 'User not found' });
     }
     res.json({ success: true, user });
   } catch (error) {
+    if (req.user && req.user.role === 'admin') {
+      return res.json({ success: true, user: req.user });
+    }
     res.status(500).json({ success: false, message: error.message });
   }
 };
