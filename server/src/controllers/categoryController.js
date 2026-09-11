@@ -123,31 +123,50 @@ export const updateCategory = async (req, res) => {
   }
 };
 
-// @desc    Delete category (Safe check for attached products)
+// @desc    Delete category (Unassign products to preserve them as uncategorized)
 // @route   DELETE /api/categories/:id
 // @access  Private/Admin
 export const deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const category = await Category.findById(id);
+    let category = null;
 
-    if (!category) {
-      return res.status(404).json({ success: false, message: 'Category not found' });
+    if (id && id.match(/^[0-9a-fA-F]{24}$/)) {
+      category = await Category.findById(id);
     }
-
-    // Check if category contains products
-    const productCount = await Product.countDocuments({ category: id });
-    if (productCount > 0) {
-      return res.status(400).json({
-        success: false,
-        message: `This category contains ${productCount} product(s). Move or delete those products before deleting the category.`,
+    if (!category) {
+      category = await Category.findOne({
+        $or: [
+          { slug: id },
+          { name: new RegExp(`^${id}$`, 'i') },
+          { slug: id.toLowerCase().replace(/[^a-z0-9]+/g, '-') },
+        ],
       });
     }
 
-    await Category.findByIdAndDelete(id);
+    if (!category) {
+      // Idempotent: if already deleted or doesn't exist, return success
+      return res.json({ success: true, message: 'Category deleted successfully', id });
+    }
 
-    res.json({ success: true, message: 'Category deleted successfully' });
+    const categoryId = category._id;
+
+    // Unassign products belonging to this category so they are preserved
+    await Product.updateMany(
+      { $or: [{ category: categoryId }, { category: String(categoryId) }] },
+      { $unset: { category: 1 } }
+    );
+
+    await Category.findByIdAndDelete(categoryId);
+
+    res.json({
+      success: true,
+      message: `Category "${category.name}" deleted successfully. Products have been uncategorized.`,
+      id: categoryId,
+    });
   } catch (error) {
+    console.error('Delete category error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
+

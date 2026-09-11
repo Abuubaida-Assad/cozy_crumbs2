@@ -166,10 +166,6 @@ export default function Footer() {
             >
               Order Desk: +91 7093322796
             </a>
-            <span className="text-white/40">•</span>
-            <Link to="/admin" className="hover:text-[#FFA7EE] transition-colors font-medium">
-              Admin Portal
-            </Link>
           </div>
         </div>
       </div>

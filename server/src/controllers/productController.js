@@ -129,13 +129,16 @@ export const getProductById = async (req, res) => {
     }
 
     // Get related products from same category
-    const relatedProducts = await Product.find({
-      category: product.category._id,
-      _id: { $ne: product._id },
-      isAvailable: true,
-    })
-      .populate('category', 'name slug')
-      .limit(4);
+    let relatedProducts = [];
+    if (product.category && product.category._id) {
+      relatedProducts = await Product.find({
+        category: product.category._id,
+        _id: { $ne: product._id },
+        isAvailable: true,
+      })
+        .populate('category', 'name slug')
+        .limit(4);
+    }
 
     res.json({
       success: true,

@@ -65,15 +65,49 @@ export const normalizeCategory = (c, products = []) => {
   };
 };
 
+const defaultStarterInquiries = [
+  {
+    _id: 'inq_sample_1',
+    name: 'Aisha Khan',
+    email: 'aisha.khan@example.com',
+    phone: '+91 98765 43210',
+    subject: 'Custom Celebration Cake',
+    message: 'Hello! I would like to order a 2-tier dark chocolate truffle cake with floral piping for a birthday on Saturday.',
+    status: 'unread',
+    createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
+  },
+  {
+    _id: 'inq_sample_2',
+    name: 'Rahul Sharma',
+    email: 'rahul.s@example.com',
+    phone: '+91 98111 22334',
+    subject: 'Catering & Bulk Order',
+    message: 'We are hosting an office breakfast event for 40 people next Thursday. Can we get an assortment of croissants, puffs, and cold brew?',
+    status: 'unread',
+    createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
+  },
+  {
+    _id: 'inq_sample_3',
+    name: 'Pooja Verma',
+    email: 'pooja.verma@example.com',
+    phone: '+91 97654 32109',
+    subject: 'General Inquiry',
+    message: 'Are your breads and sourdough loaves 100% whole wheat and vegan friendly?',
+    status: 'read',
+    createdAt: new Date(Date.now() - 3600000 * 24).toISOString(),
+  },
+];
+
 export const BakeryProvider = ({ children }) => {
   // Initialize state with localStorage or seed data for instantaneous render
   const [products, setProducts] = useState(() => {
     try {
+      const deletedIds = new Set(JSON.parse(localStorage.getItem('cozy_crumbs_deleted_products') || '[]'));
       const saved = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map(normalizeProduct);
+          return parsed.filter(p => !deletedIds.has(String(p._id)) && !deletedIds.has(String(p.id)) && !deletedIds.has(String(p.slug))).map(normalizeProduct);
         }
       }
     } catch (e) {
@@ -84,30 +118,38 @@ export const BakeryProvider = ({ children }) => {
 
   const [categories, setCategories] = useState(() => {
     try {
+      const deletedCatIds = new Set(JSON.parse(localStorage.getItem('cozy_crumbs_deleted_categories') || '[]'));
       const saved = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          return parsed.filter(c => !deletedCatIds.has(String(c._id)) && !deletedCatIds.has(String(c.id)) && !deletedCatIds.has(String(c.slug)));
         }
       }
     } catch (e) {
       console.warn('Failed to parse saved categories:', e);
     }
-    return (fallbackCategories || seedCategories).map((c) => normalizeCategory(c, fallbackProducts || seedProductsData));
+    const deletedCatIds = new Set(JSON.parse(localStorage.getItem('cozy_crumbs_deleted_categories') || '[]'));
+    return (fallbackCategories || seedCategories)
+      .filter(c => !deletedCatIds.has(String(c._id)) && !deletedCatIds.has(String(c.id)) && !deletedCatIds.has(String(c.slug)))
+      .map((c) => normalizeCategory(c, fallbackProducts || seedProductsData));
   });
 
   const [inquiries, setInquiries] = useState(() => {
     try {
+      const deletedInqIds = new Set(JSON.parse(localStorage.getItem('cozy_crumbs_deleted_inquiries') || '[]'));
       const saved = localStorage.getItem(STORAGE_KEYS.INQUIRIES);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.filter(i => !deletedInqIds.has(String(i._id)) && !deletedInqIds.has(String(i.id)));
+        }
       }
+      return defaultStarterInquiries.filter(i => !deletedInqIds.has(String(i._id)));
     } catch (e) {
       console.warn('Failed to parse saved inquiries:', e);
+      return defaultStarterInquiries;
     }
-    return [];
   });
 
   const [loading, setLoading] = useState(false);
@@ -162,11 +204,20 @@ export const BakeryProvider = ({ children }) => {
       const catRes = await fetch('/api/categories?all=true').catch(() => null);
       if (catRes && catRes.ok) {
         const catData = await catRes.json();
-        if (catData.success && Array.isArray(catData.data) && catData.data.length > 0) {
-          const normCats = catData.data.map(c => normalizeCategory(c, products));
+        if (catData.success && Array.isArray(catData.data)) {
+          const deletedCatIds = new Set(JSON.parse(localStorage.getItem('cozy_crumbs_deleted_categories') || '[]'));
+          const normCats = catData.data.map(c => normalizeCategory(c));
           const apiCatIds = new Set(normCats.map(c => String(c._id)));
+
           setCategories((prev) => {
-            const localOnly = (prev || []).filter(c => !apiCatIds.has(String(c._id)) && !apiCatIds.has(String(c.id)) && String(c._id).startsWith('cat_'));
+            const localOnly = (prev || []).filter(c =>
+              !deletedCatIds.has(String(c._id)) &&
+              !deletedCatIds.has(String(c.id)) &&
+              !deletedCatIds.has(String(c.slug)) &&
+              !apiCatIds.has(String(c._id)) &&
+              !apiCatIds.has(String(c.id)) &&
+              String(c._id).startsWith('cat_')
+            );
             const merged = [...normCats, ...localOnly];
             try {
               localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(merged));
@@ -205,8 +256,12 @@ export const BakeryProvider = ({ children }) => {
         if (inqRes && inqRes.ok) {
           const inqData = await inqRes.json();
           if (inqData.success && Array.isArray(inqData.data)) {
-            setInquiries(inqData.data);
-            localStorage.setItem(STORAGE_KEYS.INQUIRIES, JSON.stringify(inqData.data));
+            const deletedInqIds = new Set(JSON.parse(localStorage.getItem('cozy_crumbs_deleted_inquiries') || '[]'));
+            const filteredInquiries = inqData.data.filter(
+              i => !deletedInqIds.has(String(i._id)) && !deletedInqIds.has(String(i.id))
+            );
+            setInquiries(filteredInquiries);
+            localStorage.setItem(STORAGE_KEYS.INQUIRIES, JSON.stringify(filteredInquiries));
           }
         }
       }
@@ -214,7 +269,7 @@ export const BakeryProvider = ({ children }) => {
     } catch (err) {
       console.warn('API sync warning (operating with local state):', err);
     }
-  }, [products]);
+  }, []);
 
   // Initial fetch and synchronization listener
   useEffect(() => {
@@ -233,13 +288,19 @@ export const BakeryProvider = ({ children }) => {
       }
     };
 
+    const handleAuth = () => {
+      refreshFromAPI();
+    };
+
     window.addEventListener('cozy_crumbs_data_sync', handleSync);
+    window.addEventListener('cozy_crumbs_auth_change', handleAuth);
     window.addEventListener('storage', handleSync);
     return () => {
       window.removeEventListener('cozy_crumbs_data_sync', handleSync);
+      window.removeEventListener('cozy_crumbs_auth_change', handleAuth);
       window.removeEventListener('storage', handleSync);
     };
-  }, []);
+  }, [refreshFromAPI]);
 
   // ================= Product Operations =================
   const addProduct = async (productData) => {
@@ -452,18 +513,62 @@ export const BakeryProvider = ({ children }) => {
   };
 
   const deleteCategory = async (id) => {
-    const token = localStorage.getItem('cozy_crumbs_admin_token');
-    const updated = categories.filter(c => c._id !== id && c.id !== id);
-    persistCategories(updated);
+    const targetCategory = categories.find(c => c._id === id || c.id === id || c.slug === id);
+    const catName = targetCategory?.name;
+    const catSlug = targetCategory?.slug;
 
+    // 1. Remove category from list
+    const updatedCategories = categories.filter(c => c._id !== id && c.id !== id && c.slug !== id);
+    persistCategories(updatedCategories);
+
+    // 2. Unassign products that belonged to this category (preserve them as uncategorized)
+    const updatedProducts = products.map(p => {
+      const pCatId = p.category?._id || p.category;
+      const pCatName = p.category?.name || p.categoryName;
+      const pCatSlug = p.category?.slug || p.categorySlug;
+
+      if (
+        pCatId === id ||
+        pCatId === targetCategory?._id ||
+        (catName && pCatName?.toLowerCase() === catName.toLowerCase()) ||
+        (catSlug && pCatSlug === catSlug)
+      ) {
+        return {
+          ...p,
+          category: null,
+          categoryName: 'Uncategorized',
+          categorySlug: 'uncategorized',
+        };
+      }
+      return p;
+    });
+    persistProducts(updatedProducts);
+
+    // 3. Keep track of deleted category IDs/slugs so refreshFromAPI doesn't restore it
+    try {
+      const deleted = JSON.parse(localStorage.getItem('cozy_crumbs_deleted_categories') || '[]');
+      if (!deleted.includes(String(id))) deleted.push(String(id));
+      if (targetCategory?._id && !deleted.includes(String(targetCategory._id))) deleted.push(String(targetCategory._id));
+      if (catSlug && !deleted.includes(String(catSlug))) deleted.push(String(catSlug));
+      localStorage.setItem('cozy_crumbs_deleted_categories', JSON.stringify(deleted));
+    } catch (err) {
+      console.warn('Failed to save deleted category id:', err);
+    }
+
+    // 4. Delete on backend API if authenticated
+    const token = localStorage.getItem('cozy_crumbs_admin_token');
     if (token) {
       try {
-        await fetch(`/api/categories/${id}`, {
+        const res = await fetch(`/api/categories/${id}`, {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` },
         });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || (data.success === false && data.message)) {
+          console.warn('Category DELETE warning:', data.message);
+        }
       } catch (e) {
-        console.warn('Category DELETE error, saved locally:', e);
+        console.warn('Category DELETE network error:', e);
       }
     }
     return { success: true };
@@ -526,9 +631,22 @@ export const BakeryProvider = ({ children }) => {
   };
 
   const deleteInquiry = async (id) => {
+    // 1. Remove inquiry from state
     const updated = inquiries.filter(i => i._id !== id && i.id !== id);
     persistInquiries(updated);
 
+    // 2. Track deleted inquiries so refreshFromAPI doesn't restore it
+    try {
+      const deleted = JSON.parse(localStorage.getItem('cozy_crumbs_deleted_inquiries') || '[]');
+      if (!deleted.includes(String(id))) {
+        deleted.push(String(id));
+        localStorage.setItem('cozy_crumbs_deleted_inquiries', JSON.stringify(deleted));
+      }
+    } catch (err) {
+      console.warn('Failed to save deleted inquiry id:', err);
+    }
+
+    // 3. Call backend API if authenticated
     const token = localStorage.getItem('cozy_crumbs_admin_token');
     if (token) {
       try {
@@ -540,6 +658,7 @@ export const BakeryProvider = ({ children }) => {
         console.warn('Delete inquiry sync error:', e);
       }
     }
+    return { success: true };
   };
 
   return (

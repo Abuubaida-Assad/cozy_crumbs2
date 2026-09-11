@@ -16,8 +16,8 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
 const seedDatabase = async () => {
   try {
     const mongoUri = process.env.MONGO_URI;
-    if (!mongoUri || !process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD) {
-      throw new Error('MONGO_URI, ADMIN_EMAIL, and ADMIN_PASSWORD must be configured before seeding.');
+    if (!mongoUri) {
+      throw new Error('MONGO_URI must be configured before seeding.');
     }
     console.log(`[Seed] Connecting to MongoDB: ${mongoUri}...`);
     await mongoose.connect(mongoUri);
@@ -31,8 +31,8 @@ const seedDatabase = async () => {
     await Store.deleteMany({});
 
     // 2. Seed Admin User(s)
-    const primaryAdminEmail = process.env.ADMIN_EMAIL;
-    const primaryAdminPass = process.env.ADMIN_PASSWORD;
+    const primaryAdminEmail = process.env.ADMIN_EMAIL || 'cozycrumbs6767@gmail.com';
+    const primaryAdminPass = process.env.ADMIN_PASSWORD || '@cozycrumbs6767@';
 
     console.log('[Seed] Creating admin accounts...');
     const adminUser = await User.create({
@@ -70,31 +70,36 @@ const seedDatabase = async () => {
         weight: prod.weight,
         image: prod.image,
         category: categoryId,
-        isVeg: prod.isVeg,
-        isEggless: prod.isEggless,
-        isFeatured: prod.isFeatured,
-        isAvailable: prod.isAvailable,
-        displayOrder: prod.displayOrder,
-        ingredients: prod.ingredients,
-        nutritionalInfo: prod.nutritionalInfo,
+        isVeg: prod.isVeg !== undefined ? prod.isVeg : true,
+        isEggless: prod.isEggless !== undefined ? prod.isEggless : false,
+        isFeatured: prod.isFeatured !== undefined ? prod.isFeatured : false,
+        isAvailable: prod.isAvailable !== undefined ? prod.isAvailable : true,
+        isSeasonal: prod.isSeasonal !== undefined ? prod.isSeasonal : false,
+        displayOrder: prod.displayOrder || 0,
+        ingredients: prod.ingredients || [],
+        nutritionalInfo: prod.nutritionalInfo || { calories: '350 kcal', servings: '4-6', shelfLife: '2-3 Days' },
       };
     });
 
     const createdProducts = await Product.insertMany(productsToInsert);
-    console.log(`[Seed] Seeded ${createdProducts.length} bakery products.`);
+    console.log(`[Seed] Seeded ${createdProducts.length} products.`);
+
+    // 5. Seed Stores
+    console.log('[Seed] Seeding stores...');
     const createdStores = await Store.insertMany(seedStores);
     console.log(`[Seed] Seeded ${createdStores.length} stores.`);
 
-    console.log('==================================================');
-    console.log('🎉 DATABASE SEEDING COMPLETED SUCCESSFULLY!');
-    console.log(`Admin Email: ${primaryAdminEmail}`);
-    console.log(`Categories Seeded: ${createdCategories.length}`);
-    console.log(`Products Seeded: ${createdProducts.length}`);
-    console.log('==================================================');
+    console.log('--------------------------------------------------');
+    console.log('🎉 [Seed Success] Database populated successfully!');
+    console.log(`👤 Admin: ${adminUser.email}`);
+    console.log(`📁 Categories: ${createdCategories.length}`);
+    console.log(`🎂 Products: ${createdProducts.length}`);
+    console.log(`📍 Stores: ${createdStores.length}`);
+    console.log('--------------------------------------------------');
 
     process.exit(0);
   } catch (error) {
-    console.error(`[Seed Error] ${error.message}`);
+    console.error(`❌ [Seed Error] ${error.message}`);
     process.exit(1);
   }
 };

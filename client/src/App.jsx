@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { BakeryProvider } from './context/BakeryContext';
 import { CartProvider } from './context/CartContext';
 import { SearchProvider } from './context/SearchContext';
@@ -27,6 +27,20 @@ function ScrollToTop() {
   return null;
 }
 
+function ProtectedAdminRoute({ children }) {
+  const { isAuthenticated, token, user } = useAuth();
+  if (
+    !isAuthenticated ||
+    !token ||
+    !user ||
+    user.role !== 'admin' ||
+    user.email?.toLowerCase() !== 'cozycrumbs6767@gmail.com'
+  ) {
+    return <Navigate to="/admin/login" replace />;
+  }
+  return children;
+}
+
 function MainLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
@@ -38,8 +52,22 @@ function MainLayout() {
         <ScrollToTop />
         <Routes>
           <Route path="/admin/login" element={<AdminLoginPage />} />
-          <Route path="/admin" element={<AdminDashboardPage />} />
-          <Route path="/admin/*" element={<AdminDashboardPage />} />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedAdminRoute>
+                <AdminDashboardPage />
+              </ProtectedAdminRoute>
+            }
+          />
+          <Route
+            path="/admin/*"
+            element={
+              <ProtectedAdminRoute>
+                <AdminDashboardPage />
+              </ProtectedAdminRoute>
+            }
+          />
         </Routes>
       </div>
     );

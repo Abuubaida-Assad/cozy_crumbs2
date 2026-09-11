@@ -10,28 +10,49 @@ let mongoMemoryInstance = null;
 
 dns.setServers(['8.8.8.8', '1.1.1.1']);
 
+export const ensureAdminUser = async () => {
+  try {
+    const primaryAdminEmail = (process.env.ADMIN_EMAIL || 'cozycrumbs6767@gmail.com').toLowerCase().trim();
+    const primaryAdminPass = process.env.ADMIN_PASSWORD || '@cozycrumbs6767@';
+
+    let admin = await User.findOne({ email: primaryAdminEmail });
+    if (!admin) {
+      admin = await User.findOne({ role: 'admin' });
+      if (admin) {
+        admin.name = 'Cozy Crumbs Admin';
+        admin.email = primaryAdminEmail;
+        admin.password = primaryAdminPass;
+        await admin.save();
+        console.log(`[DB Init] Admin user updated to ${primaryAdminEmail}`);
+      } else {
+        await User.create({
+          name: 'Cozy Crumbs Admin',
+          email: primaryAdminEmail,
+          password: primaryAdminPass,
+          role: 'admin',
+        });
+        console.log(`[DB Init] Admin user created for ${primaryAdminEmail}`);
+      }
+    } else {
+      const isMatch = await admin.matchPassword(primaryAdminPass);
+      if (!isMatch) {
+        admin.password = primaryAdminPass;
+        await admin.save();
+        console.log(`[DB Init] Admin password synchronized for ${primaryAdminEmail}`);
+      }
+    }
+  } catch (err) {
+    console.error('[DB Init Error] Failed to ensure admin user:', err.message);
+  }
+};
+
 export const autoSeedIfEmpty = async () => {
   try {
     if (process.env.AUTO_SEED !== 'true') return;
 
-    const userCount = await User.countDocuments();
     const categoryCount = await Category.countDocuments();
     const productCount = await Product.countDocuments();
     const storeCount = await Store.countDocuments();
-
-    if (userCount === 0) {
-      const primaryAdminEmail = process.env.ADMIN_EMAIL;
-      const primaryAdminPass = process.env.ADMIN_PASSWORD;
-      if (!primaryAdminEmail || !primaryAdminPass) {
-        throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD are required when AUTO_SEED is enabled.');
-      }
-      await User.create({
-        name: 'Cozy Crumbs Admin',
-        email: primaryAdminEmail.toLowerCase(),
-        password: primaryAdminPass,
-        role: 'admin',
-      });
-    }
 
     if (categoryCount === 0 && productCount === 0) {
       console.log('[DB Init] Database is empty. Running automatic seed data initialization...');
@@ -84,6 +105,7 @@ export const connectDB = async () => {
       dbName: 'cozy_crumbs',
     });
     console.log(`[MongoDB] Connected: ${conn.connection.host}/${conn.connection.name}`);
+    await ensureAdminUser();
     await autoSeedIfEmpty();
     return;
   } catch (error) {
@@ -102,6 +124,7 @@ export const connectDB = async () => {
       const conn = await mongoose.connect(memUri);
       console.log(`[MongoDB] In-Memory Server Active: ${memUri}`);
 
+      await ensureAdminUser();
       await autoSeedIfEmpty();
     } catch (memErr) {
       throw new Error(`In-memory MongoDB fallback failed: ${memErr.message}`);

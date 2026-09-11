@@ -1,36 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 
 export default function AdminLoginPage() {
-  const [email, setEmail] = useState('admin@cozycrumbs.local');
-  const [password, setPassword] = useState('ChangeThisBeforeDeploying123!');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-  const { login, loading } = useAuth();
+  const { login, loading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     if (e) e.preventDefault();
     setErrorMessage('');
 
-    const res = await login(email, password);
-    if (res.success) {
-      navigate('/admin');
-    } else {
-      setErrorMessage(res.error || 'Failed to authenticate');
-    }
-  };
+    const cleanEmail = email.trim();
+    const cleanPassword = password.trim();
 
-  const handleQuickDemoLogin = async () => {
-    setEmail('admin@cozycrumbs.local');
-    setPassword('ChangeThisBeforeDeploying123!');
-    setErrorMessage('');
-    const res = await login('admin@cozycrumbs.local', 'ChangeThisBeforeDeploying123!');
+    if (!cleanEmail || !cleanPassword) {
+      setErrorMessage('Please enter both email and password.');
+      return;
+    }
+
+    const res = await login(cleanEmail, cleanPassword);
     if (res.success) {
-      navigate('/admin');
+      navigate('/admin', { replace: true });
     } else {
-      setErrorMessage(res.error || 'Failed to authenticate');
+      setErrorMessage(res.error || 'Invalid admin credentials');
     }
   };
 
@@ -71,17 +67,22 @@ export default function AdminLoginPage() {
         )}
 
         {/* Login Form */}
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleLogin} autoComplete="off" className="space-y-4">
           <div>
             <label className="block text-[11px] font-bold uppercase tracking-wider text-[#ECE5D8]/70 mb-1.5">
               Admin Email
             </label>
             <input
               type="email"
+              name="admin_email_field"
               required
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="cozycrumbs6767@gmail.com"
+              placeholder="Enter admin email"
               className="w-full px-4 py-3 rounded-xl bg-[#1B130E] border border-white/10 text-white placeholder-white/30 text-xs font-semibold focus:border-[#C06B3E] outline-none transition-colors"
             />
           </div>
@@ -92,10 +93,12 @@ export default function AdminLoginPage() {
             </label>
             <input
               type="password"
+              name="admin_password_field"
               required
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
+              placeholder="Enter admin password"
               className="w-full px-4 py-3 rounded-xl bg-[#1B130E] border border-white/10 text-white placeholder-white/30 text-xs font-semibold focus:border-[#C06B3E] outline-none transition-colors"
             />
           </div>
@@ -103,26 +106,11 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 rounded-xl bg-[#C06B3E] hover:bg-[#a8582d] text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md mt-2 cursor-pointer"
+            className="w-full py-3.5 rounded-xl bg-[#C06B3E] hover:bg-[#a8582d] text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md mt-2 cursor-pointer disabled:opacity-50"
           >
             {loading ? 'Authenticating...' : 'Sign In To Dashboard →'}
           </button>
         </form>
-
-        {/* Quick Demo One-Click Access */}
-        <div className="mt-6 pt-5 border-t border-white/10 text-center space-y-2.5">
-          <p className="text-[11px] text-[#ECE5D8]/50 font-medium">
-            Pre-configured with admin credentials
-          </p>
-          <button
-            type="button"
-            onClick={handleQuickDemoLogin}
-            disabled={loading}
-            className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold uppercase tracking-wider transition cursor-pointer"
-          >
-            ⚡ 1-Click Instant Sign In
-          </button>
-        </div>
 
         {/* Back Link */}
         <div className="mt-6 text-center">

@@ -8,7 +8,16 @@
     "build": "npm --prefix client run build",
     "server": "npm --prefix server run dev"
   },
-  "keywords": ["bakery", "mern", "react", "vite", "tailwind"],
+  "keywords": [
+    "bakery",
+    "mern",
+    "react",
+    "vite",
+    "tailwind"
+  ],
   "author": "Cozy Crumbs",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
 }

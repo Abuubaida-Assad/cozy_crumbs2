@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard,
@@ -28,7 +28,14 @@ import { useBakery } from '../../context/BakeryContext';
 import ImageUploader from '../../components/admin/ImageUploader';
 
 export default function AdminDashboardPage() {
-  const { logout } = useAuth();
+  const { logout, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/admin/login');
+    }
+  }, [isAuthenticated, navigate]);
 
   const {
     products = [],
@@ -44,6 +51,7 @@ export default function AdminDashboardPage() {
     deleteCategory,
     updateInquiryStatus,
     deleteInquiry,
+    refreshData,
   } = useBakery();
 
   // Safe arrays
@@ -53,6 +61,13 @@ export default function AdminDashboardPage() {
 
   // Active navigation tab: 'dashboard' | 'products' | 'categories' | 'messages'
   const [activeTab, setActiveTab] = useState('dashboard');
+
+  // Sync latest data whenever active tab switches
+  useEffect(() => {
+    if (typeof refreshData === 'function') {
+      refreshData();
+    }
+  }, [activeTab]);
 
   // Filters for Products
   const [searchQuery, setSearchQuery] = useState('');
@@ -332,14 +347,22 @@ export default function AdminDashboardPage() {
   // ================= Handlers: Inquiry =================
   const handleToggleInquiryStatus = async (inq) => {
     const newStatus = inq.status === 'read' ? 'unread' : 'read';
-    await updateInquiryStatus(inq._id || inq.id, newStatus);
-    showToast(`Marked inquiry as ${newStatus}`);
+    try {
+      await updateInquiryStatus(inq._id || inq.id, newStatus);
+      showToast(`Marked inquiry as ${newStatus}`);
+    } catch (err) {
+      showToast(err.message || 'Failed to update status', 'error');
+    }
   };
 
   const handleDeleteInquiry = async (inq) => {
     if (!window.confirm(`Delete inquiry from "${inq.name}"?`)) return;
-    await deleteInquiry(inq._id || inq.id);
-    showToast('Inquiry deleted');
+    try {
+      await deleteInquiry(inq._id || inq.id);
+      showToast('Inquiry deleted');
+    } catch (err) {
+      showToast(err.message || 'Failed to delete inquiry', 'error');
+    }
   };
 
   // Helper: icon representation for category
