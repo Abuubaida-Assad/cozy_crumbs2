@@ -9,24 +9,68 @@ const STORAGE_KEYS = {
   INQUIRIES: 'cozy_crumbs_live_inquiries',
 };
 
+export const defaultProductImages = {
+  'chocolate-cake': '/images/products/cakes/chocolate-cake.webp',
+  'vanilla-cake': '/images/products/cakes/vanilla-cake.webp',
+  'butterscotch-cake': '/images/products/cakes/butterscotch-cake.webp',
+  'pineapple-cake': '/images/products/cakes/pineapple-cake.webp',
+  'strawberry-cake': '/images/products/cakes/strawberry-cake.webp',
+  'mango-cake': '/images/products/cakes/mango-cake.webp',
+  'black-forest-cake': '/images/products/cakes/black-forest-cake.webp',
+  'white-forest-cake': '/images/products/cakes/white-forest-cake.webp',
+  'chocolate-pastry': '/images/products/pastries/chocolate-pastry.webp',
+  'vanilla-pastry': '/images/products/pastries/vanilla-pastry.webp',
+  'butterscotch-pastry': '/images/products/pastries/butterscotch-pastry.webp',
+  'pineapple-pastry': '/images/products/pastries/pineapple-pastry.webp',
+  'strawberry-pastry': '/images/products/pastries/strawberry-pastry.webp',
+  'mango-pastry': '/images/products/pastries/mango-pastry.webp',
+  'black-forest-pastry': '/images/products/pastries/black-forest-pastry.webp',
+  'white-forest-pastry': '/images/products/pastries/white-forest-pastry.webp',
+  'regular-bread': '/images/products/breads/regular-bread.webp',
+  'brown-bread': '/images/products/breads/brown-bread.webp',
+  'milk-bread': '/images/products/breads/milk-bread.webp',
+  'sandwich-bread': '/images/products/breads/sandwich-bread.webp',
+  'moon-biscuit': '/images/products/brownies/moon-biscuit.webp',
+  'cream-roll': '/images/products/brownies/cream-roll.webp',
+  'cupcake': '/images/products/brownies/cupcake.webp',
+  'fine-biscuit': '/images/products/brownies/fine-biscuit.webp',
+  'rusk': '/images/products/brownies/rusk.webp',
+  'khari': '/images/products/brownies/khari.webp',
+  'egg-puff': '/images/products/puffs/egg-puff.webp',
+  'veg-puff': '/images/products/puffs/veg-puff.webp',
+  'chicken-puff': '/images/products/puffs/chicken-puff.webp',
+  'chocolate-protein-shake': '/images/products/protein-shakes/chocolate-protein-shake.webp',
+  'vanilla-protein-shake': '/images/products/protein-shakes/vanilla-protein-shake.webp',
+};
+
 // Normalize raw product from either seed or API
 export const normalizeProduct = (p) => {
   const id = p._id || p.id || p.slug || `prod_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+  const name = p.name || 'Artisanal Bake';
+  const slug = p.slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  const slugKey = slug.toLowerCase();
   const categoryName = p.categoryName || p.category?.name || (typeof p.category === 'string' && !p.category.match(/^[0-9a-fA-F]{24}$/) ? p.category : 'Cakes');
   const categorySlug = p.categorySlug || p.category?.slug || categoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   
+  let image = p.image || '';
+  if (!image || image.includes('placeholder')) {
+    image = defaultProductImages[slugKey] || '/images/products/cakes/chocolate-cake.webp';
+  } else if (!image.startsWith('/') && !image.startsWith('http') && !image.startsWith('data:')) {
+    image = `/${image}`;
+  }
+
   return {
     _id: id,
     id: id,
-    name: p.name || 'Artisanal Bake',
-    slug: p.slug || (p.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+    name,
+    slug,
     category: p.category || categoryName,
     categoryName,
     categorySlug,
     description: p.description || '',
     price: Number(p.price) || 0,
     weight: p.weight || '500g',
-    image: p.image || '/images/products/cakes/chocolate-cake.webp',
+    image,
     isVeg: p.isVeg !== undefined ? Boolean(p.isVeg) : true,
     isEggless: p.isEggless !== undefined ? Boolean(p.isEggless) : true,
     isFeatured: p.isFeatured !== undefined ? Boolean(p.isFeatured) : false,

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useBakery } from '../context/BakeryContext';
+import { useBakery, defaultProductImages } from '../context/BakeryContext';
 import { useCart, getProductId } from '../context/CartContext';
 import DietaryBadge from '../components/DietaryBadge';
 import AnimatedButton from '../components/animations/AnimatedButton';
@@ -131,45 +131,50 @@ export default function MenuPage() {
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
         >
           <AnimatePresence mode="popLayout">
-            {filteredProducts.map((product, index) => (
-              <motion.div
-                key={product.id || product._id || product.slug || `prod-${index}`}
-                layout
-                initial={{ opacity: 0, y: 40, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.2 } }}
-                transition={{
-                  duration: 0.5,
-                  delay: Math.min((index % 4) * 0.08, 0.3),
-                  ease: [0.22, 1, 0.36, 1],
-                }}
-                whileHover={{ y: -5 }}
-                className="flex flex-col justify-between p-6 bg-white border border-[#112229]/15 rounded-3xl hover:border-[#147C98] hover:shadow-lg transition-all duration-300"
-              >
-                <div>
-                  <div
-                    className="aspect-square rounded-2xl overflow-hidden bg-[#FFDAED]/20 cursor-pointer relative mb-4 group"
-                    onClick={() => setSelectedProduct(product)}
-                  >
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="w-full h-full object-cover select-none transition-transform duration-500 ease-out group-hover:scale-105"
-                      onError={(e) => {
-                        e.target.src = '/images/products/cakes/chocolate-cake.webp';
-                      }}
-                    />
-                    <div className="absolute top-3 right-3">
-                      <DietaryBadge isVeg={product.isVeg} isEggless={product.isEggless} />
-                    </div>
+            {filteredProducts.map((product, index) => {
+              const fallbackImg = defaultProductImages[product.slug] || '/images/products/cakes/chocolate-cake.webp';
 
-                    <div className="absolute top-3 left-3">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-sm text-emerald-800 border border-emerald-300 font-title font-bold text-[10px] uppercase tracking-wider shadow-sm">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        In Stock
-                      </span>
+              return (
+                <motion.div
+                  key={product.id || product._id || product.slug || `prod-${index}`}
+                  layout
+                  initial={{ opacity: 0, y: 40, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.2 } }}
+                  transition={{
+                    duration: 0.5,
+                    delay: Math.min((index % 4) * 0.08, 0.3),
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                  whileHover={{ y: -5 }}
+                  className="flex flex-col justify-between p-6 bg-white border border-[#112229]/15 rounded-3xl hover:border-[#147C98] hover:shadow-lg transition-all duration-300"
+                >
+                  <div>
+                    <div
+                      className="aspect-square rounded-2xl overflow-hidden bg-[#FFDAED]/20 cursor-pointer relative mb-4 group"
+                      onClick={() => setSelectedProduct(product)}
+                    >
+                      <img
+                        src={product.image || fallbackImg}
+                        alt={product.name}
+                        className="w-full h-full object-cover select-none transition-transform duration-500 ease-out group-hover:scale-105"
+                        onError={(e) => {
+                          if (e.target.src !== fallbackImg) {
+                            e.target.src = fallbackImg;
+                          }
+                        }}
+                      />
+                      <div className="absolute top-3 right-3">
+                        <DietaryBadge isVeg={product.isVeg} isEggless={product.isEggless} />
+                      </div>
+
+                      <div className="absolute top-3 left-3">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-sm text-emerald-800 border border-emerald-300 font-title font-bold text-[10px] uppercase tracking-wider shadow-sm">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          In Stock
+                        </span>
+                      </div>
                     </div>
-                  </div>
 
                   <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-widest text-[#147C98] mb-1">
                     <span>{product.categoryName}</span>
@@ -260,9 +265,10 @@ export default function MenuPage() {
                   </button>
                 </div>
               </motion.div>
-            ))}
-          </AnimatePresence>
-        </motion.div>
+            );
+          })}
+        </AnimatePresence>
+      </motion.div>
 
         {/* Detailed Product Modal with AnimatePresence */}
         <AnimatePresence>

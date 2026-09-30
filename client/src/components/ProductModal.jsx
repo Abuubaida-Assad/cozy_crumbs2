@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { defaultProductImages } from '../context/BakeryContext';
 import DietaryBadge from './DietaryBadge';
 
 export default function ProductModal() {
@@ -26,6 +27,7 @@ export default function ProductModal() {
   if (!selectedProductModal) return null;
 
   const product = selectedProductModal;
+  const fallbackImg = defaultProductImages[product.slug] || '/images/products/cakes/chocolate-cake.webp';
 
   const handleCustomOrder = () => {
     closeProductModal();
@@ -58,11 +60,13 @@ export default function ProductModal() {
         <div className="w-full md:w-1/2 flex flex-col items-center">
           <div className="w-full aspect-square rounded-3xl overflow-hidden bg-[#FFDAED]/30 border border-[#112229]/10 shadow-inner relative group">
             <img
-              src={product.image}
+              src={product.image || fallbackImg}
               alt={product.name}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-[cubic-bezier(.28,_.71,_0,_.98)]"
               onError={(e) => {
-                e.target.src = '/images/products/cakes/chocolate-cake.webp';
+                if (e.target.src !== fallbackImg) {
+                  e.target.src = fallbackImg;
+                }
               }}
             />
             {product.isFeatured && (
