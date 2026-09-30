@@ -36,6 +36,16 @@ const productSchema = new mongoose.Schema(
       required: false,
       default: null,
     },
+    categoryName: {
+      type: String,
+      default: 'Cakes',
+      trim: true,
+    },
+    categorySlug: {
+      type: String,
+      default: 'cakes',
+      trim: true,
+    },
     isVeg: {
       type: Boolean,
       default: true,

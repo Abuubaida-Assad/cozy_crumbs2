@@ -12,8 +12,8 @@ const STORAGE_KEYS = {
 // Normalize raw product from either seed or API
 export const normalizeProduct = (p) => {
   const id = p._id || p.id || p.slug || `prod_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
-  const categoryName = p.category?.name || p.categoryName || (typeof p.category === 'string' && !p.category.match(/^[0-9a-fA-F]{24}$/) ? p.category : 'Cakes');
-  const categorySlug = p.category?.slug || p.categorySlug || categoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  const categoryName = p.categoryName || p.category?.name || (typeof p.category === 'string' && !p.category.match(/^[0-9a-fA-F]{24}$/) ? p.category : 'Cakes');
+  const categorySlug = p.categorySlug || p.category?.slug || categoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   
   return {
     _id: id,
@@ -342,6 +342,10 @@ export const BakeryProvider = ({ children }) => {
       }
       return updated;
     });
+
+    setTimeout(() => {
+      refreshFromAPI();
+    }, 150);
 
     return { success: true, product: newProd };
   };

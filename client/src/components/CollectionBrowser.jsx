@@ -6,7 +6,7 @@ import DietaryBadge from './DietaryBadge';
 export default function CollectionBrowser({ initialCategory = 'All', showHeader = true, limit = null }) {
   const { products, categories: liveCategories } = useBakery();
   const [activeCategory, setActiveCategory] = useState(initialCategory);
-  const { openProductModal, addToCart } = useCart();
+  const { openProductModal } = useCart();
 
   const categories = useMemo(() => {
     const list = (liveCategories || []).filter(c => c.isActive !== false).map(c => c.name);
@@ -16,7 +16,14 @@ export default function CollectionBrowser({ initialCategory = 'All', showHeader 
   const filteredProducts = useMemo(() => {
     let list = (products || []).filter(p => p.isAvailable !== false);
     if (activeCategory !== 'All') {
-      list = list.filter(p => p.categoryName?.toLowerCase() === activeCategory.toLowerCase());
+      list = list.filter(p => {
+        const catName = p.categoryName || p.category?.name || (typeof p.category === 'string' ? p.category : '');
+        const catSlug = p.categorySlug || p.category?.slug || '';
+        return (
+          catName.trim().toLowerCase() === activeCategory.trim().toLowerCase() ||
+          catSlug.trim().toLowerCase() === activeCategory.trim().toLowerCase()
+        );
+      });
     }
     if (limit) {
       return list.slice(0, limit);
@@ -65,7 +72,7 @@ export default function CollectionBrowser({ initialCategory = 'All', showHeader 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
           {filteredProducts.map((product) => (
             <div
-              key={product.id}
+              key={product.id || product._id}
               className="group flex flex-col bg-[#FAF8F5] rounded-3xl p-4 border border-[#112229]/10 hover:border-[#147C98] hover:shadow-xl transition-all duration-500"
             >
               {/* Image Container with Dual Reveal and Arch Top */}
@@ -103,20 +110,9 @@ export default function CollectionBrowser({ initialCategory = 'All', showHeader 
                       e.stopPropagation();
                       openProductModal(product);
                     }}
-                    className="flex-1 py-2.5 rounded-pill bg-white/95 backdrop-blur-sm text-[#112229] font-title text-xs font-bold uppercase tracking-wider hover:bg-[#112229] hover:text-white transition-colors shadow-sm"
+                    className="w-full py-2.5 rounded-pill bg-white/95 backdrop-blur-sm text-[#112229] font-title text-xs font-bold uppercase tracking-wider hover:bg-[#112229] hover:text-white transition-colors shadow-sm"
                   >
                     Quick View
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      addToCart(product, 1);
-                    }}
-                    aria-label={`Add ${product.name} to bag`}
-                    className="w-10 h-10 rounded-full bg-[#112229] text-[#FFA7EE] flex items-center justify-center hover:bg-[#147C98] hover:text-white transition-colors shadow-sm"
-                  >
-                    +
                   </button>
                 </div>
               </div>
@@ -141,18 +137,18 @@ export default function CollectionBrowser({ initialCategory = 'All', showHeader 
                   </p>
                 </div>
 
-                {/* Bottom Price and Add Action */}
+                {/* Bottom Price and View Details Action */}
                 <div className="mt-4 pt-3 border-t border-[#112229]/10 flex items-center justify-between">
                   <span className="font-title text-lg font-black text-[#112229]">
-                    {product.formattedPrice}
+                    {product.formattedPrice || `₹${product.price || 0}`}
                   </span>
 
                   <button
                     type="button"
-                    onClick={() => addToCart(product, 1)}
-                    className="px-4 py-1.5 rounded-pill bg-transparent border-2 border-[#112229] group-hover:bg-[#112229] group-hover:text-white text-[#112229] font-title text-xs font-bold uppercase tracking-wider transition-all duration-300"
+                    onClick={() => openProductModal(product)}
+                    className="px-4 py-1.5 rounded-pill bg-transparent border-2 border-[#112229] group-hover:bg-[#112229] group-hover:text-white text-[#112229] font-title text-xs font-bold uppercase tracking-wider transition-all duration-300 cursor-pointer"
                   >
-                    Add to Bag
+                    View Details
                   </button>
                 </div>
               </div>

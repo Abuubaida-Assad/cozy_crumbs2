@@ -157,11 +157,48 @@ export default function ProductModal() {
 
           {/* Action Row */}
           <div className="space-y-3 pt-4 border-t border-[#112229]/10">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center rounded-pill bg-white border border-[#112229]/20 overflow-hidden shadow-sm p-1">
+                <button
+                  type="button"
+                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                  aria-label="Decrease quantity"
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-[#112229] hover:bg-[#FFA7EE] font-bold text-base transition-colors"
+                >
+                  -
+                </button>
+                <span className="w-10 text-center font-hero font-extrabold text-sm text-[#112229]">
+                  {quantity}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setQuantity((q) => q + 1)}
+                  aria-label="Increase quantity"
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-[#112229] hover:bg-[#FFA7EE] font-bold text-base transition-colors"
+                >
+                  +
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  addToCart(product, quantity);
+                  closeProductModal();
+                }}
+                className="flex-1 py-3.5 px-6 rounded-pill bg-[#112229] hover:bg-[#FFA7EE] text-white hover:text-[#112229] font-title font-extrabold text-xs sm:text-sm uppercase tracking-wider transition-colors shadow-md flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>+ ADD TO CART</span>
+                <span>•</span>
+                <span>₹{(Number(product.price) || 0) * quantity}</span>
+              </button>
+            </div>
+
             <a
               href={`https://wa.me/917093322796?text=Hi%20Cozy%20Crumbs!%20I%20would%20like%20to%20order%20the%20${encodeURIComponent(product.name)}.`}
               target="_blank"
               rel="noreferrer"
-              className="w-full py-3.5 px-6 rounded-pill bg-[#FFA7EE] hover:bg-[#112229] hover:text-[#F8F8F2] text-[#112229] font-title font-extrabold text-sm uppercase tracking-wider transition-colors duration-300 shadow-md flex items-center justify-center gap-2"
+              className="w-full py-3 px-6 rounded-pill bg-[#FFA7EE] hover:bg-[#112229] hover:text-[#F8F8F2] text-[#112229] font-title font-extrabold text-xs uppercase tracking-wider transition-colors duration-300 shadow-sm flex items-center justify-center gap-2"
             >
               ORDER VIA WHATSAPP (+91 7093322796)
             </a>

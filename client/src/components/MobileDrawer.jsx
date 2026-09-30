@@ -2,8 +2,10 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { siteConfig } from '../data/siteData';
+import { useCart } from '../context/CartContext';
 
 export default function MobileDrawer({ isOpen, onClose }) {
+  const { cartCount, setIsCartOpen } = useCart();
   const location = useLocation();
 
   const links = [
@@ -83,14 +85,52 @@ export default function MobileDrawer({ isOpen, onClose }) {
                     </motion.li>
                   );
                 })}
+
+                <motion.li
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    delay: 0.1 + links.length * 0.08,
+                    duration: 0.45,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      setIsCartOpen(true);
+                    }}
+                    className="flex items-center gap-3 font-hero text-3xl uppercase font-extrabold tracking-tight text-[#112229] hover:text-[#FFA7EE] transition-colors"
+                  >
+                    <span>CART</span>
+                    <span className="text-base px-2.5 py-1 rounded-full bg-[#FFA7EE] text-[#112229] font-title font-black">
+                      {cartCount}
+                    </span>
+                  </button>
+                </motion.li>
               </ul>
             </nav>
 
-            {/* Bottom Contact */}
-            <div className="pt-6 border-t border-[#112229]/15 space-y-4">
+            {/* Bottom Actions */}
+            <div className="pt-6 border-t border-[#112229]/15 space-y-3">
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  setIsCartOpen(true);
+                }}
+                className="w-full py-3.5 rounded-pill bg-[#112229] text-[#F8F8F2] font-title font-extrabold text-sm uppercase tracking-wider block text-center shadow-md hover:bg-[#147C98] transition-colors flex items-center justify-center gap-2"
+              >
+                <span>VIEW ORDER</span>
+                <span className="px-2 py-0.5 rounded-full bg-[#FFA7EE] text-[#112229] font-black text-xs">
+                  {cartCount}
+                </span>
+              </button>
+
               <a
                 href="tel:+917093322796"
-                className="w-full py-4 rounded-pill bg-[#FFA7EE] text-[#112229] font-title font-extrabold text-sm uppercase tracking-wider block text-center shadow-md hover:bg-[#112229] hover:text-white transition-colors"
+                className="w-full py-3.5 rounded-pill bg-[#FFA7EE] text-[#112229] font-title font-extrabold text-sm uppercase tracking-wider block text-center shadow-md hover:bg-[#112229] hover:text-white transition-colors"
               >
                 CALL: +91 7093322796
               </a>

@@ -2,17 +2,41 @@ import React, { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBakery } from '../context/BakeryContext';
+import { useCart, getProductId } from '../context/CartContext';
 import DietaryBadge from '../components/DietaryBadge';
 import AnimatedButton from '../components/animations/AnimatedButton';
 import Reveal from '../components/animations/Reveal';
 
 export default function MenuPage() {
   const { products, categories: liveCategories } = useBakery();
+  const { addToCart, getItemQuantity, updateQuantity } = useCart();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialCat = searchParams.get('category') || 'All';
   const [selectedCategory, setSelectedCategory] = useState(initialCat);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [modalQty, setModalQty] = useState(1);
+  const [recentlyAddedId, setRecentlyAddedId] = useState(null);
+
+  // Sync selectedCategory when URL search parameter changes
+  React.useEffect(() => {
+    const urlCat = searchParams.get('category');
+    if (urlCat) {
+      setSelectedCategory(urlCat);
+    } else {
+      setSelectedCategory('All');
+    }
+  }, [searchParams]);
+
+  const handleAddToCart = (product, qty = 1, e) => {
+    if (e) e.stopPropagation();
+    const pid = getProductId(product);
+    addToCart(product, qty, true); // true opens drawer for immediate confirmation
+    setRecentlyAddedId(pid);
+    setTimeout(() => {
+      setRecentlyAddedId((curr) => (curr === pid ? null : curr));
+    }, 1800);
+  };
 
   const categories = useMemo(() => {
     const list = (liveCategories || []).filter(c => c.isActive !== false).map((c) => c.name);
@@ -25,7 +49,16 @@ export default function MenuPage() {
     return (products || []).filter((p) => {
       if (p.isAvailable === false) return false;
       const catName = p.categoryName || p.category?.name || (typeof p.category === 'string' ? p.category : '');
-      if (selectedCategory !== 'All' && catName.toLowerCase() !== selectedCategory.toLowerCase()) return false;
+      const catSlug = p.categorySlug || p.category?.slug || '';
+      
+      if (
+        selectedCategory !== 'All' &&
+        catName.trim().toLowerCase() !== selectedCategory.trim().toLowerCase() &&
+        catSlug.trim().toLowerCase() !== selectedCategory.trim().toLowerCase()
+      ) {
+        return false;
+      }
+
       if (searchQuery.trim() !== '') {
         const q = searchQuery.toLowerCase();
         return (
@@ -129,33 +162,102 @@ export default function MenuPage() {
                     <div className="absolute top-3 right-3">
                       <DietaryBadge isVeg={product.isVeg} isEggless={product.isEggless} />
                     </div>
+
+                    <div className="absolute top-3 left-3">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur-sm text-emerald-800 border border-emerald-300 font-title font-bold text-[10px] uppercase tracking-wider shadow-sm">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        In Stock
+                      </span>
+                    </div>
                   </div>
 
-                  <span className="text-[11px] font-bold uppercase tracking-widest text-[#147C98] block mb-1">
-                    {product.categoryName}
-                  </span>
+                  <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-widest text-[#147C98] mb-1">
+                    <span>{product.categoryName}</span>
+                    <span className="text-base font-black text-[#112229]">
+                      ₹{product.price || 0}
+                    </span>
+                  </div>
 
                   <h3
-                    onClick={() => setSelectedProduct(product)}
+                    onClick={() => {
+                      setSelectedProduct(product);
+                      setModalQty(1);
+                    }}
                     className="font-title text-xl font-bold uppercase text-[#112229] leading-tight cursor-pointer hover:text-[#147C98] transition-colors"
                   >
                     {product.name}
                   </h3>
 
-                  <p className="mt-2 text-xs text-[#112229]/70 leading-relaxed line-clamp-3">
+                  <p className="mt-2 text-xs text-[#112229]/70 leading-relaxed line-clamp-2">
                     {product.description}
                   </p>
                 </div>
 
-                {/* SEE MORE Button with Micro-Interaction */}
-                <div className="mt-6 pt-4 border-t border-[#112229]/10">
-                  <AnimatedButton
+                {/* Card Actions: +- (Add / Stepper) & INFO Button */}
+                <div className="mt-6 pt-4 border-t border-[#112229]/10 flex items-center gap-2.5">
+                  {(() => {
+                    const pid = product._id || product.id;
+                    const itemQty = getItemQuantity(pid);
+                    const isRecentlyAdded = recentlyAddedId === pid;
+
+                    if (itemQty > 0) {
+                      return (
+                        <div className="flex-1 flex items-center justify-between rounded-pill bg-[#112229] text-white px-3 py-1.5 shadow-sm">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateQuantity(pid, itemQty - 1);
+                            }}
+                            aria-label="Decrease quantity"
+                            className="w-7 h-7 rounded-full flex items-center justify-center text-white hover:bg-white/20 font-black text-sm transition-colors cursor-pointer"
+                          >
+                            -
+                          </button>
+                          <span className="font-hero font-extrabold text-xs text-[#FFA7EE] px-1 select-none">
+                            {itemQty} in cart
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateQuantity(pid, itemQty + 1);
+                            }}
+                            aria-label="Increase quantity"
+                            className="w-7 h-7 rounded-full flex items-center justify-center text-white hover:bg-white/20 font-black text-sm transition-colors cursor-pointer"
+                          >
+                            +
+                          </button>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <button
+                        type="button"
+                        onClick={(e) => handleAddToCart(product, 1, e)}
+                        className={`flex-1 py-2.5 px-4 rounded-pill font-title font-extrabold text-xs uppercase tracking-wider text-center transition-all duration-300 shadow-md flex items-center justify-center gap-1.5 cursor-pointer ${
+                          isRecentlyAdded
+                            ? 'bg-emerald-600 text-white scale-[1.02]'
+                            : 'bg-[#112229] hover:bg-[#FFA7EE] text-white hover:text-[#112229]'
+                        }`}
+                      >
+                        {isRecentlyAdded ? 'Added' : '+ Add to Cart'}
+                      </button>
+                    );
+                  })()}
+
+                  {/* Info Button */}
+                  <button
                     type="button"
-                    onClick={() => setSelectedProduct(product)}
-                    className="w-full py-3 px-4 rounded-pill bg-[#FFA7EE] hover:bg-[#112229] hover:text-white text-[#112229] font-title font-extrabold text-xs uppercase tracking-wider block text-center transition-colors shadow-sm"
+                    onClick={() => {
+                      setSelectedProduct(product);
+                      setModalQty(1);
+                    }}
+                    className="py-2.5 px-4 rounded-pill border border-[#112229]/20 hover:border-[#112229] text-[#112229] font-title font-bold text-xs uppercase tracking-wider text-center transition-colors hover:bg-black/5 cursor-pointer"
                   >
-                    SEE MORE
-                  </AnimatedButton>
+                    Info
+                  </button>
                 </div>
               </motion.div>
             ))}
@@ -225,12 +327,12 @@ export default function MenuPage() {
                       </h2>
 
                       {/* Meta Badges Row */}
-                      <div className="flex flex-wrap items-center gap-2.5 mb-6">
-                        <span className="px-3.5 py-1.5 rounded-full bg-[#F8F8F2] text-[#112229]/80 font-medium text-xs italic">
-                          Price available in store
+                      <div className="flex flex-wrap items-baseline gap-3 mb-6">
+                        <span className="font-hero font-extrabold text-3xl text-[#112229]">
+                          ₹{selectedProduct.price || 0}
                         </span>
                         <span className="px-3.5 py-1.5 rounded-full bg-[#F8F8F2] text-[#112229] font-bold text-xs">
-                          {selectedProduct.weight || '500g / 1kg'}
+                          {selectedProduct.weight || 'Freshly Baked'}
                         </span>
                         <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-300 font-bold text-xs">
                           Available
@@ -294,8 +396,46 @@ export default function MenuPage() {
                       )}
                     </div>
 
-                    {/* Bottom Action Area */}
+                    {/* Bottom Action Area: Add to Cart + WhatsApp */}
                     <div className="pt-4 border-t border-[#112229]/10 space-y-3">
+                      {/* Quantity Selector + Add to Cart */}
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center rounded-pill bg-[#F8F8F2] border border-[#112229]/20 overflow-hidden shadow-sm p-1">
+                          <button
+                            type="button"
+                            onClick={() => setModalQty((q) => Math.max(1, q - 1))}
+                            aria-label="Decrease quantity"
+                            className="w-9 h-9 rounded-full flex items-center justify-center text-[#112229] hover:bg-white font-bold text-base transition-colors"
+                          >
+                            -
+                          </button>
+                          <span className="w-10 text-center font-hero font-extrabold text-sm text-[#112229]">
+                            {modalQty}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setModalQty((q) => q + 1)}
+                            aria-label="Increase quantity"
+                            className="w-9 h-9 rounded-full flex items-center justify-center text-[#112229] hover:bg-white font-bold text-base transition-colors"
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleAddToCart(selectedProduct, modalQty);
+                            setSelectedProduct(null);
+                          }}
+                          className="flex-1 py-3.5 px-6 rounded-pill bg-[#112229] hover:bg-[#FFA7EE] text-white hover:text-[#112229] font-title font-extrabold text-xs sm:text-sm uppercase tracking-wider transition-colors shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                        >
+                          <span>+ ADD TO CART</span>
+                          <span>•</span>
+                          <span>₹{(Number(selectedProduct.price) || 0) * modalQty}</span>
+                        </button>
+                      </div>
+
                       <AnimatedButton
                         as="a"
                         href={`https://wa.me/917093322796?text=${encodeURIComponent(
@@ -303,12 +443,12 @@ export default function MenuPage() {
                         )}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="w-full py-4 rounded-pill bg-[#26211F] hover:bg-[#FFA7EE] hover:text-[#112229] text-white font-title font-extrabold text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2.5 transition-colors shadow-lg"
+                        className="w-full py-3 rounded-pill bg-[#F8F8F2] hover:bg-[#112229] hover:text-white text-[#112229] font-title font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors border border-[#112229]/20"
                       >
                         <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
                           <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z" />
                         </svg>
-                        <span>INQUIRE / CUSTOM ORDER</span>
+                        <span>INQUIRE / CUSTOM REQUEST</span>
                       </AnimatedButton>
                       <p className="text-[11px] text-center text-[#112229]/60 font-medium">
                         Freshly handcrafted by Cozy Crumbs master bakers.

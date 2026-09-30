@@ -8,14 +8,20 @@ import { SearchProvider } from './context/SearchContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import MobileDrawer from './components/MobileDrawer';
+import CartDrawer from './components/CartDrawer';
+import ProductModal from './components/ProductModal';
+import FloatingCartBar from './components/FloatingCartBar';
 
 import HomePage from './pages/HomePage';
 import MenuPage from './pages/MenuPage';
+import CartPage from './pages/CartPage';
+import CheckoutPage from './pages/CheckoutPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import NotFoundPage from './pages/NotFoundPage';
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import CartToast from './components/CartToast';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -86,11 +92,25 @@ function MainLayout() {
         onClose={() => setIsMobileMenuOpen(false)}
       />
 
+      {/* Cart Drawer */}
+      <CartDrawer />
+
+      {/* Floating Bottom Cart Bar */}
+      <FloatingCartBar />
+
+      {/* Cart Toast Notification */}
+      <CartToast />
+
+      {/* Product Modal */}
+      <ProductModal />
+
       {/* Main Pages */}
       <main className="flex-grow">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/menu" element={<MenuPage />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="*" element={<NotFoundPage />} />

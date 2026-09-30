@@ -33,7 +33,7 @@ export const getProducts = async (req, res) => {
       query.isAvailable = isAvailable === 'true';
     }
 
-    // Category filter (support category ObjectId or slug)
+    // Category filter (support category ObjectId, slug, or name)
     if (category) {
       if (category.match(/^[0-9a-fA-F]{24}$/)) {
         query.category = category;
@@ -42,9 +42,16 @@ export const getProducts = async (req, res) => {
           $or: [{ slug: category.toLowerCase() }, { name: { $regex: new RegExp(`^${category}$`, 'i') } }],
         });
         if (foundCategory) {
-          query.category = foundCategory._id;
+          query.$or = [
+            { category: foundCategory._id },
+            { categoryName: { $regex: new RegExp(`^${foundCategory.name}$`, 'i') } },
+            { categorySlug: foundCategory.slug },
+          ];
         } else {
-          return res.json({ success: true, count: 0, total: 0, data: [] });
+          query.$or = [
+            { categoryName: { $regex: new RegExp(`^${category}$`, 'i') } },
+            { categorySlug: category.toLowerCase().replace(/[^a-z0-9]+/g, '-') },
+          ];
         }
       }
     }
@@ -71,7 +78,9 @@ export const getProducts = async (req, res) => {
     else if (sort === 'name') sortOption = { name: 1 };
 
     const parsedPage = Math.max(1, Number.parseInt(page, 10) || 1);
-    const parsedLimit = Math.min(100, Math.max(1, Number.parseInt(limit, 10) || 24));
+    const parsedLimit = all === 'true'
+      ? Math.min(500, Math.max(1, Number.parseInt(limit, 10) || 200))
+      : Math.min(100, Math.max(1, Number.parseInt(limit, 10) || 24));
     const skip = (parsedPage - 1) * parsedLimit;
     const total = await Product.countDocuments(query);
 
@@ -164,6 +173,8 @@ export const createProduct = async (req, res) => {
       weight,
       image,
       category,
+      categoryName: reqCategoryName,
+      categorySlug: reqCategorySlug,
       isVeg,
       isEggless,
       isFeatured,
@@ -181,36 +192,51 @@ export const createProduct = async (req, res) => {
       });
     }
 
-    let targetCategory = category || req.body.categoryId || req.body.categoryName;
+    // Determine target category name:
+    // User might pass categoryName directly (from admin dropdown), or category as a name string, or category as an ObjectId
+    let targetCatName = reqCategoryName;
     let catObj = null;
 
-    if (targetCategory) {
-      if (typeof targetCategory === 'string' && targetCategory.match(/^[0-9a-fA-F]{24}$/)) {
-        catObj = await Category.findById(targetCategory);
-      }
-      if (!catObj) {
-        catObj = await Category.findOne({
-          $or: [
-            { slug: String(targetCategory).toLowerCase().replace(/[^a-z0-9]+/g, '-') },
-            { name: { $regex: new RegExp(`^${targetCategory}$`, 'i') } },
-          ],
-        });
+    // 1. Try finding by ObjectId if category is a 24-character hex string
+    if (category && typeof category === 'string' && category.match(/^[0-9a-fA-F]{24}$/)) {
+      catObj = await Category.findById(category);
+      if (catObj && !targetCatName) {
+        targetCatName = catObj.name;
       }
     }
 
+    // 2. If no targetCatName yet, but category is a string that isn't a local cat_ ID
+    if (!targetCatName && category && typeof category === 'string' && !category.startsWith('cat_') && !category.match(/^[0-9a-fA-F]{24}$/)) {
+      targetCatName = category;
+    }
+
+    // 3. Fallback default category name if completely missing
+    if (!targetCatName) {
+      targetCatName = 'Cakes';
+    }
+
+    // 4. Look up Category by name or slug
+    if (!catObj && targetCatName) {
+      catObj = await Category.findOne({
+        $or: [
+          { name: { $regex: new RegExp(`^${targetCatName.trim()}$`, 'i') } },
+          { slug: targetCatName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-') },
+        ],
+      });
+    }
+
+    // 5. If category STILL doesn't exist in DB, create it automatically with the user's intended category name
     if (!catObj) {
-      catObj = await Category.findOne({});
-      if (!catObj) {
-        const catName = req.body.categoryName || 'Cakes';
-        catObj = await Category.create({
-          name: catName,
-          slug: catName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-          description: `Freshly baked ${catName} handcrafted daily at Cozy Crumbs.`,
-          image: image || '/images/products/cakes/chocolate-cake.webp',
-        });
-      }
+      catObj = await Category.create({
+        name: targetCatName.trim(),
+        slug: targetCatName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        description: `Freshly baked ${targetCatName.trim()} handcrafted daily at Cozy Crumbs.`,
+        image: image || '/images/products/cakes/chocolate-cake.webp',
+      });
     }
 
+    const finalCatName = catObj ? catObj.name : targetCatName.trim();
+    const finalCatSlug = catObj ? catObj.slug : finalCatName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 
     const product = await Product.create({
@@ -220,7 +246,9 @@ export const createProduct = async (req, res) => {
       price: Number(price) || 0,
       weight: weight || '500g',
       image,
-      category: catObj._id,
+      category: catObj ? catObj._id : null,
+      categoryName: finalCatName,
+      categorySlug: finalCatSlug,
       isVeg: isVeg !== undefined ? Boolean(isVeg) : true,
       isEggless: isEggless !== undefined ? Boolean(isEggless) : false,
       isFeatured: isFeatured !== undefined ? Boolean(isFeatured) : false,
@@ -256,6 +284,8 @@ export const updateProduct = async (req, res) => {
       weight,
       image,
       category,
+      categoryName: reqCategoryName,
+      categorySlug: reqCategorySlug,
       isVeg,
       isEggless,
       isFeatured,
@@ -271,23 +301,36 @@ export const updateProduct = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
-    let targetCategory = category || req.body.categoryId || req.body.categoryName;
-    if (targetCategory) {
-      let catObj = null;
-      if (typeof targetCategory === 'string' && targetCategory.match(/^[0-9a-fA-F]{24}$/)) {
-        catObj = await Category.findById(targetCategory);
+    let targetCatName = reqCategoryName;
+    let catObj = null;
+
+    if (category && typeof category === 'string' && category.match(/^[0-9a-fA-F]{24}$/)) {
+      catObj = await Category.findById(category);
+      if (catObj && !targetCatName) {
+        targetCatName = catObj.name;
       }
-      if (!catObj) {
-        catObj = await Category.findOne({
-          $or: [
-            { slug: String(targetCategory).toLowerCase().replace(/[^a-z0-9]+/g, '-') },
-            { name: { $regex: new RegExp(`^${targetCategory}$`, 'i') } },
-          ],
-        });
-      }
-      if (catObj) {
-        product.category = catObj._id;
-      }
+    }
+
+    if (!targetCatName && category && typeof category === 'string' && !category.startsWith('cat_') && !category.match(/^[0-9a-fA-F]{24}$/)) {
+      targetCatName = category;
+    }
+
+    if (!catObj && targetCatName) {
+      catObj = await Category.findOne({
+        $or: [
+          { name: { $regex: new RegExp(`^${targetCatName.trim()}$`, 'i') } },
+          { slug: targetCatName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-') },
+        ],
+      });
+    }
+
+    if (catObj) {
+      product.category = catObj._id;
+      product.categoryName = catObj.name;
+      product.categorySlug = catObj.slug;
+    } else if (targetCatName) {
+      product.categoryName = targetCatName.trim();
+      product.categorySlug = targetCatName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
     }
 
     if (name) {

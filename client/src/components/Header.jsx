@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useCart } from '../context/CartContext';
 import AnimatedButton from './animations/AnimatedButton';
 import ScrollProgress from './animations/ScrollProgress';
 
 export default function Header({ onOpenMobileMenu }) {
+  const { cartCount, total, setIsCartOpen } = useCart();
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
 
@@ -96,14 +98,26 @@ export default function Header({ onOpenMobileMenu }) {
           </ul>
         </nav>
 
-        {/* Right WhatsApp Order Button with Micro-Interaction */}
-        <div className="flex items-center gap-4">
+        {/* Right WhatsApp Order Button with Micro-Interaction & Cart Button */}
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setIsCartOpen(true)}
+            aria-label="Open Shopping Bag"
+            className="flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-pill bg-[#FFA7EE] hover:bg-white text-[#112229] font-title font-extrabold text-xs uppercase tracking-wider transition-all shadow-md cursor-pointer border-2 border-white/20"
+          >
+            <span className="font-hero font-extrabold">CART</span>
+            <span className="px-2 py-0.5 min-w-[22px] h-5 rounded-full bg-[#112229] text-[#FFA7EE] font-title font-black text-[11px] flex items-center justify-center">
+              {cartCount}
+            </span>
+          </button>
+
           <AnimatedButton
             as="a"
             href="https://wa.me/917093322796?text=Hi%20Cozy%20Crumbs!%20I%20would%20like%20to%20place%20an%20order."
             target="_blank"
             rel="noreferrer"
-            className="font-title font-bold text-xs uppercase px-5 py-2.5 rounded-pill bg-[#FFA7EE] text-[#112229] hover:bg-[#112229] hover:text-[#F8F8F2] transition-colors shadow-sm"
+            className="hidden sm:inline-block font-title font-bold text-xs uppercase px-5 py-2.5 rounded-pill bg-[#FFA7EE] text-[#112229] hover:bg-[#112229] hover:text-[#F8F8F2] transition-colors shadow-sm"
           >
             ORDER: +91 7093322796
           </AnimatedButton>

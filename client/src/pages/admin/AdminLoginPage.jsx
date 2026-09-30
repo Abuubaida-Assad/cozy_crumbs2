@@ -41,10 +41,10 @@ export default function AdminLoginPage() {
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="w-full max-w-md bg-[#241B15] border border-white/10 rounded-[32px] p-8 sm:p-10 shadow-2xl relative z-10"
+        className="w-full max-w-md bg-[#241B15] border border-white/10 rounded-3xl sm:rounded-[32px] p-6 sm:p-10 shadow-2xl relative z-10"
       >
         {/* Header Branding */}
-        <div className="text-center space-y-3 mb-8">
+        <div className="text-center space-y-3 mb-6 sm:mb-8">
           <div className="w-12 h-12 rounded-2xl bg-[#ECE5D8] text-[#1B130E] flex items-center justify-center mx-auto shadow-md">
             <span className="text-2xl">🎂</span>
           </div>
@@ -83,7 +83,7 @@ export default function AdminLoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter admin email"
-              className="w-full px-4 py-3 rounded-xl bg-[#1B130E] border border-white/10 text-white placeholder-white/30 text-xs font-semibold focus:border-[#C06B3E] outline-none transition-colors"
+              className="w-full px-4 py-3 rounded-xl bg-[#1B130E] border border-white/10 text-white placeholder-white/30 text-base sm:text-xs font-semibold focus:border-[#C06B3E] outline-none transition-colors"
             />
           </div>
 
@@ -99,7 +99,7 @@ export default function AdminLoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter admin password"
-              className="w-full px-4 py-3 rounded-xl bg-[#1B130E] border border-white/10 text-white placeholder-white/30 text-xs font-semibold focus:border-[#C06B3E] outline-none transition-colors"
+              className="w-full px-4 py-3 rounded-xl bg-[#1B130E] border border-white/10 text-white placeholder-white/30 text-base sm:text-xs font-semibold focus:border-[#C06B3E] outline-none transition-colors"
             />
           </div>
 
@@ -110,7 +110,6 @@ export default function AdminLoginPage() {
           >
             {loading ? 'Authenticating...' : 'Sign In To Dashboard →'}
           </button>
-
         </form>
 
         {/* Back Link */}

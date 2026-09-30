@@ -18,10 +18,15 @@ import {
   Star,
   Check,
   ChevronRight,
+  ChevronLeft,
   MessageSquare,
   Eye,
   EyeOff,
   Phone,
+  Menu,
+  TrendingUp,
+  ShoppingBag,
+  Users,
 } from '../../components/admin/AdminIcons';
 import { useAuth } from '../../context/AuthContext';
 import { useBakery } from '../../context/BakeryContext';
@@ -30,6 +35,30 @@ import ImageUploader from '../../components/admin/ImageUploader';
 export default function AdminDashboardPage() {
   const { logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+
+  // Mobile Drawer State
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+
+  // Tablet / Desktop Sidebar Collapse State (defaults to compact on tablet, full on desktop)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 768 && window.innerWidth < 1024;
+    }
+    return false;
+  });
+
+  // Listen for viewport resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setIsMobileDrawerOpen(false);
+      } else if (window.innerWidth >= 768 && window.innerWidth < 1024) {
+        setIsSidebarCollapsed(true);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -138,7 +167,17 @@ export default function AdminDashboardPage() {
   const activeCategoriesCount = safeCategories.filter((c) => c && c.isActive !== false).length;
   const signatureFeaturedCount = safeProducts.filter((p) => p && p.isFeatured).length;
   const availableProductsCount = safeProducts.filter((p) => p && p.isAvailable !== false).length;
+  const totalInquiriesCount = safeInquiries.length;
   const unreadInquiriesCount = safeInquiries.filter((i) => i && i.status === 'unread').length;
+
+  const estimatedCatalogValue = useMemo(() => {
+    return safeProducts.reduce((sum, p) => sum + (Number(p.price) || 0), 0);
+  }, [safeProducts]);
+
+  const uniqueCustomersCount = useMemo(() => {
+    const emails = new Set(safeInquiries.map((i) => i.email?.trim().toLowerCase()).filter(Boolean));
+    return Math.max(emails.size, safeInquiries.length);
+  }, [safeInquiries]);
 
   // Filtered Products for Products tab
   const filteredProducts = useMemo(() => {
@@ -378,25 +417,31 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] text-[#1B130E] flex font-sans antialiased">
+    <div className="min-h-screen bg-[#F8F9FA] text-[#1B130E] flex flex-col md:flex-row font-sans antialiased overflow-x-hidden">
       {/* ========================================================================= */}
-      {/* 1. LEFT SIDEBAR (Dark Espresso Brown matching Screenshot 1-4)              */}
+      {/* 1. LEFT SIDEBAR (Desktop: Full 64 / Tablet: Collapsible 20)               */}
       {/* ========================================================================= */}
-      <aside className="w-64 bg-[#1B130E] text-[#A89F91] flex flex-col justify-between p-5 select-none shrink-0 border-r border-[#2C1F17] shadow-xl z-20">
+      <aside
+        className={`hidden md:flex flex-col justify-between ${
+          isSidebarCollapsed ? 'w-20 p-3' : 'w-64 p-5'
+        } bg-[#1B130E] text-[#A89F91] select-none shrink-0 border-r border-[#2C1F17] shadow-xl z-20 transition-all duration-300`}
+      >
         <div>
           {/* Brand Header */}
-          <div className="flex items-center gap-3.5 px-2 py-3 mb-8">
+          <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3.5'} px-2 py-3 mb-8`}>
             <div className="w-10 h-10 rounded-xl bg-[#ECE5D8] flex items-center justify-center text-[#1B130E] shadow-sm shrink-0">
               <Cake className="w-5 h-5 stroke-[2.2]" />
             </div>
-            <div>
-              <h1 className="text-white font-extrabold text-[17px] tracking-tight leading-none">
-                Cozy Crumbs
-              </h1>
-              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#A89F91] block mt-1">
-                ADMIN DASHBOARD
-              </span>
-            </div>
+            {!isSidebarCollapsed && (
+              <div className="overflow-hidden">
+                <h1 className="text-white font-extrabold text-[17px] tracking-tight leading-none truncate">
+                  Cozy Crumbs
+                </h1>
+                <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#A89F91] block mt-1">
+                  ADMIN DASHBOARD
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Navigation Links */}
@@ -405,105 +450,325 @@ export default function AdminDashboardPage() {
             <button
               type="button"
               onClick={() => setActiveTab('dashboard')}
-              className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              title="Dashboard"
+              className={`w-full flex items-center ${
+                isSidebarCollapsed ? 'justify-center px-0 py-3' : 'gap-3 px-3.5 py-3'
+              } rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'dashboard'
                   ? 'bg-white/10 text-white border border-white/10 shadow-sm'
                   : 'hover:bg-white/5 hover:text-white'
               }`}
             >
-              <LayoutDashboard className="w-4 h-4 shrink-0" />
-              <span>Dashboard</span>
+              <LayoutDashboard className="w-5 h-5 shrink-0" />
+              {!isSidebarCollapsed && <span>Dashboard</span>}
             </button>
 
             {/* Products Button */}
             <button
               type="button"
               onClick={() => setActiveTab('products')}
-              className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              title="Products"
+              className={`w-full flex items-center ${
+                isSidebarCollapsed ? 'justify-center px-0 py-3' : 'gap-3 px-3.5 py-3'
+              } rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'products'
                   ? 'bg-white/10 text-white border border-white/10 shadow-sm'
                   : 'hover:bg-white/5 hover:text-white'
               }`}
             >
-              <Cake className="w-4 h-4 shrink-0" />
-              <span>Products</span>
+              <Cake className="w-5 h-5 shrink-0" />
+              {!isSidebarCollapsed && <span>Products</span>}
             </button>
 
             {/* Categories Button */}
             <button
               type="button"
               onClick={() => setActiveTab('categories')}
-              className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              title="Categories"
+              className={`w-full flex items-center ${
+                isSidebarCollapsed ? 'justify-center px-0 py-3' : 'gap-3 px-3.5 py-3'
+              } rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'categories'
                   ? 'bg-white/10 text-white border border-white/10 shadow-sm'
                   : 'hover:bg-white/5 hover:text-white'
               }`}
             >
-              <FolderTree className="w-4 h-4 shrink-0" />
-              <span>Categories</span>
+              <FolderTree className="w-5 h-5 shrink-0" />
+              {!isSidebarCollapsed && <span>Categories</span>}
             </button>
 
             {/* Messages Button */}
             <button
               type="button"
               onClick={() => setActiveTab('messages')}
-              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              title="Messages"
+              className={`w-full flex items-center ${
+                isSidebarCollapsed ? 'justify-center px-0 py-3' : 'justify-between px-3.5 py-3'
+              } rounded-xl text-xs font-bold transition-all cursor-pointer relative ${
                 activeTab === 'messages'
                   ? 'bg-white/10 text-white border border-white/10 shadow-sm'
                   : 'hover:bg-white/5 hover:text-white'
               }`}
             >
-              <div className="flex items-center gap-3">
-                <Mail className="w-4 h-4 shrink-0" />
-                <span>Messages</span>
+              <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'gap-3'}`}>
+                <Mail className="w-5 h-5 shrink-0" />
+                {!isSidebarCollapsed && <span>Messages</span>}
               </div>
               {unreadInquiriesCount > 0 && (
-                <span className="bg-[#C06B3E] text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">
-                  {unreadInquiriesCount}
-                </span>
+                isSidebarCollapsed ? (
+                  <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-[#C06B3E] ring-2 ring-[#1B130E]" />
+                ) : (
+                  <span className="bg-[#C06B3E] text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                    {unreadInquiriesCount}
+                  </span>
+                )
               )}
             </button>
           </nav>
         </div>
 
         {/* Bottom Sidebar Links */}
-        <div className="space-y-1 pt-6 border-t border-[#2C1F17]/80">
+        <div className="space-y-1.5 pt-6 border-t border-[#2C1F17]/80">
           <Link
             to="/"
             target="_blank"
-            className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-[#A89F91] hover:text-white transition-colors"
+            title="Live Bakery Site"
+            className={`flex items-center ${
+              isSidebarCollapsed ? 'justify-center px-0 py-2.5' : 'gap-2.5 px-3 py-2'
+            } text-xs font-medium text-[#A89F91] hover:text-white transition-colors`}
           >
-            <ExternalLink className="w-3.5 h-3.5" />
-            <span>Live Bakery Site</span>
+            <ExternalLink className="w-4 h-4 shrink-0" />
+            {!isSidebarCollapsed && <span>Live Bakery Site</span>}
           </Link>
 
           <button
             type="button"
             onClick={logout}
-            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-[#A89F91] hover:text-rose-400 transition-colors text-left cursor-pointer"
+            title="Logout"
+            className={`w-full flex items-center ${
+              isSidebarCollapsed ? 'justify-center px-0 py-2.5' : 'gap-2.5 px-3 py-2'
+            } text-xs font-medium text-[#A89F91] hover:text-rose-400 transition-colors text-left cursor-pointer`}
           >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Logout</span>
+            <LogOut className="w-4 h-4 shrink-0" />
+            {!isSidebarCollapsed && <span>Logout</span>}
+          </button>
+
+          {/* Toggle Sidebar Collapse (Tablet / Desktop) */}
+          <button
+            type="button"
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className={`w-full flex items-center ${
+              isSidebarCollapsed ? 'justify-center px-0 py-2' : 'justify-between px-3 py-2'
+            } text-xs font-medium text-[#A89F91] hover:text-white hover:bg-white/5 rounded-xl transition cursor-pointer mt-1`}
+          >
+            {!isSidebarCollapsed && <span className="text-[11px]">Collapse View</span>}
+            {isSidebarCollapsed ? (
+              <ChevronRight className="w-4 h-4 text-gray-400" />
+            ) : (
+              <ChevronLeft className="w-4 h-4 text-gray-400" />
+            )}
           </button>
         </div>
       </aside>
+
+      {/* ========================================================================= */}
+      {/* 1.1 MOBILE SLIDE-OVER DRAWER (For all phones & handheld devices)           */}
+      {/* ========================================================================= */}
+      <AnimatePresence>
+        {isMobileDrawerOpen && (
+          <div className="fixed inset-0 z-50 md:hidden flex">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileDrawerOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+            />
+
+            {/* Slide-over Menu Panel */}
+            <motion.div
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 240 }}
+              className="relative w-72 max-w-[85vw] bg-[#1B130E] text-[#A89F91] flex flex-col justify-between p-5 select-none shadow-2xl z-10"
+            >
+              <div>
+                {/* Brand Header & Close */}
+                <div className="flex items-center justify-between px-2 py-3 mb-6 border-b border-[#2C1F17] pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-[#ECE5D8] flex items-center justify-center text-[#1B130E] shadow-sm shrink-0">
+                      <Cake className="w-5 h-5 stroke-[2.2]" />
+                    </div>
+                    <div>
+                      <h2 className="text-white font-extrabold text-[16px] tracking-tight leading-none">
+                        Cozy Crumbs
+                      </h2>
+                      <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#C06B3E] block mt-1">
+                        ADMIN PORTAL
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsMobileDrawerOpen(false)}
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Nav Links */}
+                <nav className="space-y-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('dashboard');
+                      setIsMobileDrawerOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${
+                      activeTab === 'dashboard'
+                        ? 'bg-white/10 text-white border border-white/10 shadow-sm'
+                        : 'hover:bg-white/5 hover:text-white'
+                    }`}
+                  >
+                    <LayoutDashboard className="w-4 h-4 shrink-0" />
+                    <span>Dashboard</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('products');
+                      setIsMobileDrawerOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${
+                      activeTab === 'products'
+                        ? 'bg-white/10 text-white border border-white/10 shadow-sm'
+                        : 'hover:bg-white/5 hover:text-white'
+                    }`}
+                  >
+                    <Cake className="w-4 h-4 shrink-0" />
+                    <span>Products</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('categories');
+                      setIsMobileDrawerOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${
+                      activeTab === 'categories'
+                        ? 'bg-white/10 text-white border border-white/10 shadow-sm'
+                        : 'hover:bg-white/5 hover:text-white'
+                    }`}
+                  >
+                    <FolderTree className="w-4 h-4 shrink-0" />
+                    <span>Categories</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('messages');
+                      setIsMobileDrawerOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all ${
+                      activeTab === 'messages'
+                        ? 'bg-white/10 text-white border border-white/10 shadow-sm'
+                        : 'hover:bg-white/5 hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Mail className="w-4 h-4 shrink-0" />
+                      <span>Messages</span>
+                    </div>
+                    {unreadInquiriesCount > 0 && (
+                      <span className="bg-[#C06B3E] text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                        {unreadInquiriesCount}
+                      </span>
+                    )}
+                  </button>
+                </nav>
+              </div>
+
+              {/* Bottom Drawer Actions */}
+              <div className="space-y-2 pt-6 border-t border-[#2C1F17]">
+                <Link
+                  to="/"
+                  target="_blank"
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-medium text-[#A89F91] hover:text-white hover:bg-white/5 transition-colors"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  <span>Live Bakery Site</span>
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-medium text-rose-300 hover:text-rose-200 hover:bg-rose-500/10 transition-colors text-left cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Logout</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* ========================================================================= */}
       {/* 2. MAIN WORKSPACE (Light Canvas with Top Navigation)                      */}
       {/* ========================================================================= */}
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         {/* Top Header */}
-        <header className="h-16 bg-white border-b border-gray-100 px-8 flex items-center justify-between shrink-0 sticky top-0 z-10">
-          <h2 className="text-[17px] font-bold text-[#1B130E] tracking-tight">
-            Cozy Crumbs Admin Portal
-          </h2>
+        <header className="h-16 bg-white border-b border-gray-100 px-3.5 sm:px-6 md:px-8 flex items-center justify-between shrink-0 sticky top-0 z-30">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            {/* Hamburger Button for Mobile (< 768px) */}
+            <button
+              type="button"
+              onClick={() => setIsMobileDrawerOpen(true)}
+              aria-label="Open Admin Menu"
+              className="md:hidden p-2 -ml-1 text-gray-700 hover:text-[#1B130E] hover:bg-gray-100 rounded-xl transition cursor-pointer shrink-0"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
 
-          {/* User profile card matching screenshots */}
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#ECE5D8] text-[#1B130E] font-bold text-xs flex items-center justify-center shadow-inner">
+            {/* Tablet Sidebar Toggle (768px–1023px) */}
+            <button
+              type="button"
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              className="hidden md:flex lg:hidden p-2 -ml-1 text-gray-600 hover:text-[#1B130E] hover:bg-gray-100 rounded-xl transition cursor-pointer shrink-0"
+              title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
+            <h2 className="text-sm sm:text-base md:text-[17px] font-bold text-[#1B130E] tracking-tight truncate">
+              Cozy Crumbs Admin
+            </h2>
+          </div>
+
+          {/* User profile & actions */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link
+              to="/"
+              target="_blank"
+              title="Open Live Website"
+              className="px-2.5 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-[#1B130E] rounded-lg transition flex items-center gap-1.5 text-xs font-semibold border border-gray-200"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Live Site</span>
+            </Link>
+
+            <div className="w-8 h-8 rounded-full bg-[#ECE5D8] text-[#1B130E] font-bold text-xs flex items-center justify-center shadow-inner shrink-0">
               C
             </div>
-            <div className="text-right sm:text-left">
+            <div className="hidden lg:block text-right sm:text-left">
               <span className="block text-xs font-bold text-[#1B130E] leading-tight">
                 Cozy Crumbs Admin
               </span>
@@ -521,7 +786,7 @@ export default function AdminDashboardPage() {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="fixed top-20 right-8 z-50 px-4 py-3 rounded-xl shadow-xl font-bold text-xs flex items-center gap-2 bg-[#1B130E] text-white border border-[#C06B3E]"
+              className="fixed top-20 right-4 sm:right-8 z-50 px-4 py-3 rounded-xl shadow-xl font-bold text-xs flex items-center gap-2 bg-[#1B130E] text-white border border-[#C06B3E]"
             >
               <Check className="w-4 h-4 text-[#10B981]" />
               <span>{toast.text}</span>
@@ -530,19 +795,19 @@ export default function AdminDashboardPage() {
         </AnimatePresence>
 
         {/* Content Body Container */}
-        <main className="p-8 max-w-7xl w-full mx-auto space-y-8">
+        <main className="p-3 sm:p-6 md:p-8 pb-28 md:pb-8 max-w-7xl w-full mx-auto space-y-6 sm:space-y-8 min-w-0">
           {/* ========================================================================= */}
           {/* TAB 1: DASHBOARD OVERVIEW (Image 1)                                       */}
           {/* ========================================================================= */}
           {activeTab === 'dashboard' && (
-            <div className="space-y-8 animate-fadeIn">
+            <div className="space-y-6 sm:space-y-8 animate-fadeIn">
               {/* Control Center Hero Banner */}
-              <div className="bg-[#192231] rounded-2xl p-7 text-white flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-md">
+              <div className="bg-[#192231] rounded-2xl p-5 sm:p-7 text-white flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-6 shadow-md">
                 <div className="space-y-1.5 max-w-xl">
                   <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#94A3B8] block">
                     CONTROL CENTER
                   </span>
-                  <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+                  <h3 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-white leading-tight">
                     Bakery Catalog & Operations
                   </h3>
                   <p className="text-xs sm:text-sm text-[#94A3B8] font-medium leading-relaxed">
@@ -550,14 +815,14 @@ export default function AdminDashboardPage() {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3 shrink-0">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 shrink-0">
                   <button
                     type="button"
                     onClick={() => {
                       setActiveTab('products');
                       handleOpenAddProduct();
                     }}
-                    className="bg-[#C06B3E] hover:bg-[#a8582d] text-white text-xs font-bold uppercase tracking-wider px-5 py-3 rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer"
+                    className="bg-[#C06B3E] hover:bg-[#a8582d] text-white text-xs font-bold uppercase tracking-wider px-4 sm:px-5 py-3 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer text-center"
                   >
                     <Plus className="w-4 h-4" />
                     <span>MANAGE PRODUCTS</span>
@@ -566,7 +831,7 @@ export default function AdminDashboardPage() {
                   <Link
                     to="/"
                     target="_blank"
-                    className="bg-[#2B384E] hover:bg-[#394a66] text-white text-xs font-bold uppercase tracking-wider px-5 py-3 rounded-xl transition-all shadow-sm flex items-center gap-2"
+                    className="bg-[#2B384E] hover:bg-[#394a66] text-white text-xs font-bold uppercase tracking-wider px-4 sm:px-5 py-3 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 text-center"
                   >
                     <ExternalLink className="w-4 h-4" />
                     <span>VIEW STORE</span>
@@ -574,73 +839,202 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* 4 Stat Metric Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {/* Stat Metric Cards (Responsive Grid: 1 col on <420px, 2 cols on mobile/tablet, 4 cols on desktop) */}
+              <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-5">
                 {/* 1. Total Products */}
-                <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center justify-between">
-                  <div>
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-gray-400 block">
+                <div className="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 shadow-sm flex items-center justify-between">
+                  <div className="min-w-0">
+                    <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-gray-400 block truncate">
                       TOTAL PRODUCTS
                     </span>
-                    <span className="text-3xl font-extrabold text-[#1B130E] mt-1 block">
+                    <span className="text-2xl sm:text-3xl font-extrabold text-[#1B130E] mt-1 block">
                       {totalProductsCount}
                     </span>
+                    <span className="text-[11px] text-gray-400 font-medium">In bakery catalog</span>
                   </div>
-                  <div className="w-11 h-11 rounded-xl bg-[#F59E0B] text-white flex items-center justify-center shadow-sm">
+                  <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-[#F59E0B] text-white flex items-center justify-center shadow-sm shrink-0 ml-2">
                     <Cake className="w-5 h-5 stroke-[2.2]" />
                   </div>
                 </div>
 
                 {/* 2. Active Categories */}
-                <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center justify-between">
-                  <div>
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-gray-400 block">
+                <div className="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 shadow-sm flex items-center justify-between">
+                  <div className="min-w-0">
+                    <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-gray-400 block truncate">
                       ACTIVE CATEGORIES
                     </span>
-                    <span className="text-3xl font-extrabold text-[#1B130E] mt-1 block">
+                    <span className="text-2xl sm:text-3xl font-extrabold text-[#1B130E] mt-1 block">
                       {activeCategoriesCount}
                     </span>
+                    <span className="text-[11px] text-gray-400 font-medium">Live menu sections</span>
                   </div>
-                  <div className="w-11 h-11 rounded-xl bg-[#10B981] text-white flex items-center justify-center shadow-sm">
+                  <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-[#10B981] text-white flex items-center justify-center shadow-sm shrink-0 ml-2">
                     <FolderTree className="w-5 h-5 stroke-[2.2]" />
                   </div>
                 </div>
 
-                {/* 3. Signature Featured */}
-                <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center justify-between">
-                  <div>
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-gray-400 block">
-                      SIGNATURE FEATURED
+                {/* 3. Orders & Inquiries */}
+                <div className="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 shadow-sm flex items-center justify-between">
+                  <div className="min-w-0">
+                    <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-gray-400 block truncate">
+                      ORDERS & INQUIRIES
                     </span>
-                    <span className="text-3xl font-extrabold text-[#1B130E] mt-1 block">
-                      {signatureFeaturedCount}
+                    <span className="text-2xl sm:text-3xl font-extrabold text-[#1B130E] mt-1 block">
+                      {totalInquiriesCount}
+                    </span>
+                    <span className="text-[11px] text-[#C06B3E] font-bold">
+                      {unreadInquiriesCount > 0 ? `${unreadInquiriesCount} unread` : `${uniqueCustomersCount} customers`}
                     </span>
                   </div>
-                  <div className="w-11 h-11 rounded-xl bg-[#A855F7] text-white flex items-center justify-center shadow-sm">
-                    <Sparkles className="w-5 h-5 stroke-[2.2]" />
+                  <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-[#C06B3E] text-white flex items-center justify-center shadow-sm shrink-0 ml-2">
+                    <ShoppingBag className="w-5 h-5 stroke-[2.2]" />
                   </div>
                 </div>
 
-                {/* 4. Available Products */}
-                <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center justify-between">
-                  <div>
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-gray-400 block">
-                      AVAILABLE PRODUCTS
+                {/* 4. Estimated Store Value / Revenue Potential */}
+                <div className="bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 shadow-sm flex items-center justify-between">
+                  <div className="min-w-0">
+                    <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-gray-400 block truncate">
+                      CATALOG VALUE
                     </span>
-                    <span className="text-3xl font-extrabold text-[#1B130E] mt-1 block">
-                      {availableProductsCount}
+                    <span className="text-2xl sm:text-3xl font-extrabold text-[#1B130E] mt-1 block truncate">
+                      ₹{estimatedCatalogValue.toLocaleString()}
+                    </span>
+                    <span className="text-[11px] text-emerald-600 font-semibold">
+                      {availableProductsCount} available now
                     </span>
                   </div>
-                  <div className="w-11 h-11 rounded-xl bg-[#3B82F6] text-white flex items-center justify-center shadow-sm">
-                    <CheckCircle2 className="w-5 h-5 stroke-[2.2]" />
+                  <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-[#3B82F6] text-white flex items-center justify-center shadow-sm shrink-0 ml-2">
+                    <TrendingUp className="w-5 h-5 stroke-[2.2]" />
                   </div>
                 </div>
               </div>
 
-              {/* Bottom Section: Two Columns */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              {/* Responsive Sales & Weekly Activity Analytics Chart */}
+              <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-100 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <span className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#C06B3E] block">
+                      SALES & INQUIRY ANALYTICS
+                    </span>
+                    <h4 className="text-base sm:text-lg font-bold text-[#1B130E]">
+                      Weekly Customer Activity & Demand
+                    </h4>
+                  </div>
+                  <div className="flex items-center gap-2 self-start sm:self-auto text-xs text-gray-500 font-medium">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-bold text-[11px]">
+                      <TrendingUp className="w-3.5 h-3.5" />
+                      +24% vs last week
+                    </span>
+                  </div>
+                </div>
+
+                {/* SVG Chart with 100% fluid viewBox */}
+                <div className="w-full overflow-hidden pt-2">
+                  <svg
+                    viewBox="0 0 600 160"
+                    className="w-full h-auto max-h-48 sm:max-h-56"
+                    preserveAspectRatio="xMidYMid meet"
+                  >
+                    <defs>
+                      <linearGradient id="caramelGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#C06B3E" stopOpacity="0.25" />
+                        <stop offset="100%" stopColor="#C06B3E" stopOpacity="0.0" />
+                      </linearGradient>
+                    </defs>
+
+                    {/* Horizontal Grid lines */}
+                    <line x1="30" y1="20" x2="580" y2="20" stroke="#F3F4F6" strokeDasharray="4 4" strokeWidth="1" />
+                    <line x1="30" y1="60" x2="580" y2="60" stroke="#F3F4F6" strokeDasharray="4 4" strokeWidth="1" />
+                    <line x1="30" y1="100" x2="580" y2="100" stroke="#F3F4F6" strokeDasharray="4 4" strokeWidth="1" />
+                    <line x1="30" y1="140" x2="580" y2="140" stroke="#E5E7EB" strokeWidth="1.2" />
+
+                    {/* Area under curve */}
+                    <path
+                      d="M 50 120 Q 130 90, 210 105 T 370 45 T 530 30 L 530 140 L 50 140 Z"
+                      fill="url(#caramelGrad)"
+                    />
+
+                    {/* Smooth curve line */}
+                    <path
+                      d="M 50 120 Q 130 90, 210 105 T 370 45 T 530 30"
+                      fill="none"
+                      stroke="#C06B3E"
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                    />
+
+                    {/* Interactive points */}
+                    {[
+                      { x: 50, y: 120, label: 'Mon' },
+                      { x: 130, y: 90, label: 'Tue' },
+                      { x: 210, y: 105, label: 'Wed' },
+                      { x: 290, y: 70, label: 'Thu' },
+                      { x: 370, y: 45, label: 'Fri' },
+                      { x: 450, y: 35, label: 'Sat' },
+                      { x: 530, y: 30, label: 'Sun' },
+                    ].map((pt, i) => (
+                      <g key={i}>
+                        <circle
+                          cx={pt.x}
+                          cy={pt.y}
+                          r="5"
+                          fill="#FFFFFF"
+                          stroke="#C06B3E"
+                          strokeWidth="3"
+                        />
+                        <text
+                          x={pt.x}
+                          y="155"
+                          textAnchor="middle"
+                          fill="#9CA3AF"
+                          fontSize="11"
+                          fontWeight="600"
+                        >
+                          {pt.label}
+                        </text>
+                      </g>
+                    ))}
+                  </svg>
+                </div>
+
+                {/* Popular Bakery Categories Distribution */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-gray-100 text-xs">
+                  <div>
+                    <span className="text-gray-400 text-[11px] block">Cakes & Bestsellers</span>
+                    <span className="font-extrabold text-[#1B130E] text-sm">48% Demand</span>
+                    <div className="w-full bg-gray-100 rounded-full h-1.5 mt-1 overflow-hidden">
+                      <div className="bg-[#C06B3E] h-full rounded-full" style={{ width: '48%' }} />
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-gray-400 text-[11px] block">Pastries & Desserts</span>
+                    <span className="font-extrabold text-[#1B130E] text-sm">26% Demand</span>
+                    <div className="w-full bg-gray-100 rounded-full h-1.5 mt-1 overflow-hidden">
+                      <div className="bg-[#10B981] h-full rounded-full" style={{ width: '26%' }} />
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-gray-400 text-[11px] block">Artisan Breads</span>
+                    <span className="font-extrabold text-[#1B130E] text-sm">16% Demand</span>
+                    <div className="w-full bg-gray-100 rounded-full h-1.5 mt-1 overflow-hidden">
+                      <div className="bg-[#F59E0B] h-full rounded-full" style={{ width: '16%' }} />
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-gray-400 text-[11px] block">Puffs & Shakes</span>
+                    <span className="font-extrabold text-[#1B130E] text-sm">10% Demand</span>
+                    <div className="w-full bg-gray-100 rounded-full h-1.5 mt-1 overflow-hidden">
+                      <div className="bg-[#3B82F6] h-full rounded-full" style={{ width: '10%' }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Section: Two Columns (Stacked on mobile/tablet, 2 cols on lg) */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
                 {/* Left (8 cols): Recently Added Bakery Items */}
-                <div className="lg:col-span-8 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm space-y-5">
+                <div className="lg:col-span-8 bg-white rounded-2xl p-4 sm:p-6 border border-gray-100 shadow-sm space-y-4 sm:space-y-5">
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="text-base font-bold text-[#1B130E]">
@@ -660,8 +1054,38 @@ export default function AdminDashboardPage() {
                     </button>
                   </div>
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
+                  {/* Mobile Recent Items (< 640px) */}
+                  <div className="sm:hidden space-y-2.5">
+                    {safeProducts.slice(0, 5).map((p) => (
+                      <div
+                        key={p._id || p.id}
+                        className="flex items-center justify-between p-3 rounded-xl bg-gray-50/70 border border-gray-100"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <img
+                            src={p.image}
+                            alt={p.name}
+                            className="w-10 h-10 rounded-lg object-cover bg-gray-100 shrink-0"
+                          />
+                          <div className="min-w-0">
+                            <h5 className="font-bold text-[#1B130E] text-xs truncate">
+                              {p.name}
+                            </h5>
+                            <span className="text-[10px] text-gray-400 block truncate">
+                              {p.categoryName} • {p.price > 0 ? `₹${p.price}` : 'In Store'}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="shrink-0 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-600 border border-emerald-200">
+                          {p.isAvailable ? 'ACTIVE' : 'INACTIVE'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Desktop Recent Items Table (>= 640px) */}
+                  <div className="hidden sm:block overflow-x-auto">
+                    <table className="w-full text-left text-xs min-w-[500px]">
                       <thead>
                         <tr className="border-b border-gray-100 text-gray-400 font-extrabold uppercase tracking-wider text-[10px]">
                           <th className="pb-3 font-semibold">PRODUCT</th>
@@ -679,7 +1103,7 @@ export default function AdminDashboardPage() {
                                 alt={p.name}
                                 className="w-9 h-9 rounded-lg object-cover bg-gray-100 shrink-0"
                               />
-                              <span className="font-bold text-[#1B130E]">{p.name}</span>
+                              <span className="font-bold text-[#1B130E] truncate">{p.name}</span>
                             </td>
                             <td className="py-3.5 text-gray-500 font-medium">
                               {p.categoryName}
@@ -821,11 +1245,11 @@ export default function AdminDashboardPage() {
                 </div>
 
                 {/* Dropdowns */}
-                <div className="flex items-center gap-3 w-full md:w-auto">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full md:w-auto">
                   <select
                     value={categoryFilter}
                     onChange={(e) => setCategoryFilter(e.target.value)}
-                    className="w-full md:w-auto px-4 py-2 bg-white border border-gray-200/80 rounded-xl text-xs font-medium text-gray-700 outline-none cursor-pointer focus:border-[#C06B3E]"
+                    className="w-full sm:w-auto px-3.5 py-2.5 bg-white border border-gray-200/80 rounded-xl text-xs font-medium text-gray-700 outline-none cursor-pointer focus:border-[#C06B3E]"
                   >
                     <option value="All">All Categories</option>
                     {safeCategories.map((c) => (
@@ -838,7 +1262,7 @@ export default function AdminDashboardPage() {
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full md:w-auto px-4 py-2 bg-white border border-gray-200/80 rounded-xl text-xs font-medium text-gray-700 outline-none cursor-pointer focus:border-[#C06B3E]"
+                    className="w-full sm:w-auto px-3.5 py-2.5 bg-white border border-gray-200/80 rounded-xl text-xs font-medium text-gray-700 outline-none cursor-pointer focus:border-[#C06B3E]"
                   >
                     <option value="All">All Statuses</option>
                     <option value="Available">Available</option>
@@ -850,10 +1274,131 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Products Table Card */}
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              {/* Mobile Product Cards View (< 640px) */}
+              <div className="sm:hidden space-y-3">
+                {filteredProducts.map((p) => (
+                  <div
+                    key={p._id || p.id}
+                    className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm space-y-3"
+                  >
+                    {/* Top Row: Image & Info */}
+                    <div className="flex items-start gap-3">
+                      <img
+                        src={p.image}
+                        alt={p.name}
+                        className="w-16 h-16 rounded-xl object-cover bg-gray-100 border border-gray-100 shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#C06B3E] truncate">
+                            {p.categoryName || 'Bake'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleFeat(p)}
+                            title={p.isFeatured ? 'Signature Featured' : 'Mark Featured'}
+                            className="p-1 -mr-1"
+                          >
+                            <Star
+                              className={`w-4 h-4 ${
+                                p.isFeatured
+                                  ? 'fill-[#A855F7] text-[#A855F7]'
+                                  : 'text-gray-300'
+                              }`}
+                            />
+                          </button>
+                        </div>
+                        <h4 className="font-bold text-[#1B130E] text-sm leading-tight truncate">
+                          {p.name}
+                        </h4>
+                        <div className="flex items-center gap-2 mt-1">
+                          {p.price > 0 ? (
+                            <span className="font-extrabold text-[#1B130E] text-sm">₹{p.price}</span>
+                          ) : (
+                            <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-[#FEF9EE] text-[#926017] border border-[#F6E3B8]">
+                              In Store
+                            </span>
+                          )}
+                          <span className="text-[11px] text-gray-400 font-medium">
+                            • {p.weight || '500g / 1kg'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Middle Row: Dietary & Availability */}
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-50 text-xs">
+                      <div>
+                        {p.isEggless ? (
+                          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded border border-emerald-300 bg-emerald-50 text-emerald-800 text-[10px] font-bold">
+                            <div className="w-2 h-2 border border-emerald-600 flex items-center justify-center p-0.5 rounded-[2px]">
+                              <div className="w-1 h-1 rounded-full bg-emerald-600" />
+                            </div>
+                            <span>Eggless</span>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-gray-400 font-medium px-2 py-0.5 rounded bg-gray-50 border border-gray-200">
+                            Regular
+                          </span>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleToggleAvail(p)}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold tracking-wider uppercase transition cursor-pointer ${
+                          p.isAvailable
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-rose-50 text-rose-700 border border-rose-200'
+                        }`}
+                      >
+                        {p.isAvailable ? (
+                          <>
+                            <Eye className="w-3 h-3" />
+                            <span>AVAILABLE</span>
+                          </>
+                        ) : (
+                          <>
+                            <EyeOff className="w-3 h-3" />
+                            <span>OUT OF STOCK</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Bottom Row: Actions */}
+                    <div className="flex items-center gap-2 pt-2 border-t border-gray-50">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditProduct(p)}
+                        className="flex-1 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 border border-gray-200/80 transition cursor-pointer"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                        <span>Edit Product</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteProduct(p)}
+                        className="py-2 px-3.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 border border-rose-200 transition cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Delete</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {filteredProducts.length === 0 && (
+                  <div className="bg-white rounded-2xl p-8 text-center text-gray-400 text-xs border border-gray-100">
+                    No products match your filter criteria.
+                  </div>
+                )}
+              </div>
+
+              {/* Desktop Products Table Card (Hidden on small screens) */}
+              <div className="hidden sm:block bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
+                  <table className="w-full text-left text-xs min-w-[700px]">
                     <thead>
                       <tr className="border-b border-gray-100 bg-gray-50/40 text-gray-400 font-extrabold uppercase tracking-wider text-[10px]">
                         <th className="px-6 py-4 font-semibold">IMAGE & PRODUCT</th>
@@ -1026,10 +1571,76 @@ export default function AdminDashboardPage() {
                 </button>
               </div>
 
-              {/* Categories Table Card */}
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              {/* Mobile Category Cards View (< 640px) */}
+              <div className="sm:hidden space-y-3">
+                {safeCategories.map((cat, idx) => (
+                  <div
+                    key={cat._id || cat.id}
+                    className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm space-y-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={cat.image || '/images/products/cakes/chocolate-cake.webp'}
+                        alt={cat.name}
+                        className="w-14 h-14 rounded-xl object-cover bg-gray-100 border border-gray-100 shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1">
+                          <h4 className="font-bold text-[#1B130E] text-sm leading-tight truncate">
+                            {cat.name}
+                          </h4>
+                          <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
+                            {cat.isActive !== false ? 'ACTIVE' : 'INACTIVE'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-1 text-[11px] text-gray-500 font-mono">
+                          <span>{getCategoryIconSymbol(cat.slug || cat.name)}</span>
+                          <span>/{cat.slug || cat.name?.toLowerCase()}</span>
+                        </div>
+                        <span className="inline-block mt-1 text-[11px] font-semibold text-gray-600">
+                          {cat.productCount || 0} products
+                        </span>
+                      </div>
+                    </div>
+
+                    {cat.description && (
+                      <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
+                        {cat.description}
+                      </p>
+                    )}
+
+                    <div className="flex items-center gap-2 pt-2 border-t border-gray-50">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditCategory(cat)}
+                        className="flex-1 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 border border-gray-200/80 transition cursor-pointer"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                        <span>Edit Category</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteCategory(cat)}
+                        className="py-2 px-3.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 border border-rose-200 transition cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Delete</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {safeCategories.length === 0 && (
+                  <div className="bg-white rounded-2xl p-8 text-center text-gray-400 text-xs border border-gray-100">
+                    No categories found.
+                  </div>
+                )}
+              </div>
+
+              {/* Desktop Categories Table Card */}
+              <div className="hidden sm:block bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
+                  <table className="w-full text-left text-xs min-w-[620px]">
                     <thead>
                       <tr className="border-b border-gray-100 bg-gray-50/40 text-gray-400 font-extrabold uppercase tracking-wider text-[10px]">
                         <th className="px-6 py-4 font-semibold">CATEGORY</th>
@@ -1241,30 +1852,93 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* ========================================================================= */}
+      {/* 2.5 MOBILE BOTTOM NAVIGATION BAR                                          */}
+      {/* ========================================================================= */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#1B130E]/95 backdrop-blur-lg border-t border-[#2C1F17] px-3 py-2 flex items-center justify-around shadow-2xl safe-area-bottom">
+        <button
+          type="button"
+          onClick={() => setActiveTab('dashboard')}
+          className={`flex flex-col items-center gap-1 transition cursor-pointer py-1 px-2.5 rounded-xl ${
+            activeTab === 'dashboard' ? 'text-[#C06B3E]' : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          <LayoutDashboard className="w-5 h-5" />
+          <span className="text-[10px] font-bold">Overview</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('products')}
+          className={`flex flex-col items-center gap-1 transition cursor-pointer py-1 px-2.5 rounded-xl ${
+            activeTab === 'products' ? 'text-[#C06B3E]' : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          <Cake className="w-5 h-5" />
+          <span className="text-[10px] font-bold">Products</span>
+        </button>
+
+        {/* Quick Add Product Floating Center Button */}
+        <button
+          type="button"
+          onClick={handleOpenAddProduct}
+          className="flex items-center justify-center w-12 h-12 -mt-5 rounded-full bg-gradient-to-tr from-[#C06B3E] to-[#d47f50] text-white shadow-lg shadow-[#C06B3E]/40 border-2 border-[#1B130E] active:scale-95 transition cursor-pointer"
+          title="Add New Product"
+          aria-label="Add New Product"
+        >
+          <Plus className="w-6 h-6 stroke-[2.5]" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('categories')}
+          className={`flex flex-col items-center gap-1 transition cursor-pointer py-1 px-2.5 rounded-xl ${
+            activeTab === 'categories' ? 'text-[#C06B3E]' : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          <FolderTree className="w-5 h-5" />
+          <span className="text-[10px] font-bold">Categories</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('messages')}
+          className={`relative flex flex-col items-center gap-1 transition cursor-pointer py-1 px-2.5 rounded-xl ${
+            activeTab === 'messages' ? 'text-[#C06B3E]' : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          <MessageSquare className="w-5 h-5" />
+          <span className="text-[10px] font-bold">Messages</span>
+          {unreadInquiriesCount > 0 && (
+            <span className="absolute top-0 right-2 w-2 h-2 rounded-full bg-[#C06B3E] ring-2 ring-[#1B130E]" />
+          )}
+        </button>
+      </nav>
+
+      {/* ========================================================================= */}
       {/* 3. MODAL: ADD / EDIT PRODUCT                                              */}
       {/* ========================================================================= */}
       <AnimatePresence>
         {isProductModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full border border-gray-100 shadow-2xl space-y-6 my-8"
+              initial={{ opacity: 0, y: 30, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 30, scale: 0.98 }}
+              className="bg-white rounded-t-3xl sm:rounded-3xl p-5 sm:p-8 max-w-2xl w-full border border-gray-100 shadow-2xl space-y-5 sm:space-y-6 max-h-[92vh] sm:max-h-[88vh] overflow-y-auto my-0 sm:my-8"
             >
-              <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-3 sm:pb-4">
                 <div>
-                  <h3 className="text-lg font-bold text-[#1B130E]">
+                  <h3 className="text-base sm:text-lg font-bold text-[#1B130E]">
                     {editingProduct ? 'Edit Bakery Item' : 'Add New Bakery Product'}
                   </h3>
-                  <p className="text-xs text-gray-400 mt-0.5">
+                  <p className="text-[11px] sm:text-xs text-gray-400 mt-0.5">
                     Changes will sync immediately to the customer website
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setIsProductModalOpen(false)}
-                  className="p-1.5 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition cursor-pointer"
+                  className="p-2 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1272,7 +1946,7 @@ export default function AdminDashboardPage() {
 
               <form onSubmit={handleSaveProduct} className="space-y-4 text-xs font-semibold">
                 {/* Product Name & Category */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <label className="block text-gray-600 mb-1">Product Name *</label>
                     <input
@@ -1281,7 +1955,7 @@ export default function AdminDashboardPage() {
                       value={productForm.name}
                       onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
                       placeholder="e.g. Belgian Chocolate Truffle Cake"
-                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#C06B3E] font-medium"
+                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#C06B3E] font-medium text-sm sm:text-xs"
                     />
                   </div>
 
@@ -1290,7 +1964,7 @@ export default function AdminDashboardPage() {
                     <select
                       value={productForm.categoryName}
                       onChange={(e) => setProductForm({ ...productForm, categoryName: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#C06B3E] font-medium cursor-pointer"
+                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#C06B3E] font-medium cursor-pointer text-sm sm:text-xs"
                     >
                       {safeCategories.map((c) => (
                         <option key={c._id || c.id} value={c.name}>
@@ -1302,7 +1976,7 @@ export default function AdminDashboardPage() {
                 </div>
 
                 {/* Price & Weight/Portion */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <label className="block text-gray-600 mb-1">
                       Price in ₹ (Set 0 for "In Store")
@@ -1312,7 +1986,7 @@ export default function AdminDashboardPage() {
                       min="0"
                       value={productForm.price}
                       onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#C06B3E] font-medium"
+                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#C06B3E] font-medium text-sm sm:text-xs"
                     />
                   </div>
 
@@ -1323,7 +1997,7 @@ export default function AdminDashboardPage() {
                       value={productForm.weight}
                       onChange={(e) => setProductForm({ ...productForm, weight: e.target.value })}
                       placeholder="e.g. 500g / 1kg or 1 Pc"
-                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#C06B3E] font-medium"
+                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#C06B3E] font-medium text-sm sm:text-xs"
                     />
                   </div>
                 </div>
@@ -1336,7 +2010,7 @@ export default function AdminDashboardPage() {
                     value={productForm.description}
                     onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
                     placeholder="Short description of ingredients, flavor notes and texture..."
-                    className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#C06B3E] font-medium resize-none"
+                    className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#C06B3E] font-medium resize-none text-sm sm:text-xs"
                   />
                 </div>
 
@@ -1349,13 +2023,13 @@ export default function AdminDashboardPage() {
                 />
 
                 {/* Toggles: Dietary & Flags */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 pt-2">
                   <label className="flex items-center gap-2 p-2.5 bg-gray-50 rounded-xl border border-gray-200/80 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={productForm.isEggless}
                       onChange={(e) => setProductForm({ ...productForm, isEggless: e.target.checked })}
-                      className="accent-[#10B981]"
+                      className="accent-[#10B981] w-4 h-4"
                     />
                     <span className="text-[11px] text-gray-700">100% Eggless</span>
                   </label>
@@ -1365,7 +2039,7 @@ export default function AdminDashboardPage() {
                       type="checkbox"
                       checked={productForm.isVeg}
                       onChange={(e) => setProductForm({ ...productForm, isVeg: e.target.checked })}
-                      className="accent-[#10B981]"
+                      className="accent-[#10B981] w-4 h-4"
                     />
                     <span className="text-[11px] text-gray-700">Vegetarian</span>
                   </label>
@@ -1375,7 +2049,7 @@ export default function AdminDashboardPage() {
                       type="checkbox"
                       checked={productForm.isFeatured}
                       onChange={(e) => setProductForm({ ...productForm, isFeatured: e.target.checked })}
-                      className="accent-[#A855F7]"
+                      className="accent-[#A855F7] w-4 h-4"
                     />
                     <span className="text-[11px] text-gray-700">Signature Featured</span>
                   </label>
@@ -1385,7 +2059,7 @@ export default function AdminDashboardPage() {
                       type="checkbox"
                       checked={productForm.isAvailable}
                       onChange={(e) => setProductForm({ ...productForm, isAvailable: e.target.checked })}
-                      className="accent-[#3B82F6]"
+                      className="accent-[#3B82F6] w-4 h-4"
                     />
                     <span className="text-[11px] text-gray-700">Available</span>
                   </label>
@@ -1396,13 +2070,13 @@ export default function AdminDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setIsProductModalOpen(false)}
-                    className="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition cursor-pointer"
+                    className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition cursor-pointer text-center"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2.5 rounded-xl bg-[#C06B3E] hover:bg-[#a8582d] text-white font-bold transition shadow-sm cursor-pointer"
+                    className="flex-1 sm:flex-initial px-6 py-2.5 rounded-xl bg-[#C06B3E] hover:bg-[#a8582d] text-white font-bold transition shadow-sm cursor-pointer text-center"
                   >
                     {editingProduct ? 'Save Changes' : 'Create Product'}
                   </button>
@@ -1418,26 +2092,26 @@ export default function AdminDashboardPage() {
       {/* ========================================================================= */}
       <AnimatePresence>
         {isCategoryModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-gray-100 shadow-2xl space-y-6"
+              initial={{ opacity: 0, y: 30, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 30, scale: 0.98 }}
+              className="bg-white rounded-t-3xl sm:rounded-3xl p-5 sm:p-8 max-w-lg w-full border border-gray-100 shadow-2xl space-y-5 sm:space-y-6 max-h-[90vh] overflow-y-auto my-0 sm:my-8"
             >
-              <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-3 sm:pb-4">
                 <div>
-                  <h3 className="text-lg font-bold text-[#1B130E]">
+                  <h3 className="text-base sm:text-lg font-bold text-[#1B130E]">
                     {editingCategory ? 'Edit Category' : 'Add New Category'}
                   </h3>
-                  <p className="text-xs text-gray-400 mt-0.5">
+                  <p className="text-[11px] sm:text-xs text-gray-400 mt-0.5">
                     Will update menu navigation and catalog filters
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setIsCategoryModalOpen(false)}
-                  className="p-1.5 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition cursor-pointer"
+                  className="p-2 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1452,11 +2126,11 @@ export default function AdminDashboardPage() {
                     value={categoryForm.name}
                     onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
                     placeholder="e.g. Sourdough Loaves"
-                    className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#C06B3E] font-medium"
+                    className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#C06B3E] font-medium text-sm sm:text-xs"
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <label className="block text-gray-600 mb-1">URL Slug</label>
                     <input
@@ -1464,7 +2138,7 @@ export default function AdminDashboardPage() {
                       value={categoryForm.slug}
                       onChange={(e) => setCategoryForm({ ...categoryForm, slug: e.target.value })}
                       placeholder="sourdough-loaves"
-                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#C06B3E] font-medium"
+                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#C06B3E] font-medium text-sm sm:text-xs"
                     />
                   </div>
 
@@ -1475,7 +2149,7 @@ export default function AdminDashboardPage() {
                       min="1"
                       value={categoryForm.displayOrder}
                       onChange={(e) => setCategoryForm({ ...categoryForm, displayOrder: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#C06B3E] font-medium"
+                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#C06B3E] font-medium text-sm sm:text-xs"
                     />
                   </div>
                 </div>
@@ -1487,7 +2161,7 @@ export default function AdminDashboardPage() {
                     value={categoryForm.description}
                     onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })}
                     placeholder="Brief description displayed on category sections..."
-                    className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#C06B3E] font-medium resize-none"
+                    className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:border-[#C06B3E] font-medium resize-none text-sm sm:text-xs"
                   />
                 </div>
 
@@ -1505,7 +2179,7 @@ export default function AdminDashboardPage() {
                       type="checkbox"
                       checked={categoryForm.isActive}
                       onChange={(e) => setCategoryForm({ ...categoryForm, isActive: e.target.checked })}
-                      className="accent-[#10B981]"
+                      className="accent-[#10B981] w-4 h-4"
                     />
                     <span className="text-gray-700">Category is Active on Customer Menu</span>
                   </label>
@@ -1515,13 +2189,13 @@ export default function AdminDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setIsCategoryModalOpen(false)}
-                    className="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition cursor-pointer"
+                    className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition cursor-pointer text-center"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2.5 rounded-xl bg-[#C06B3E] hover:bg-[#a8582d] text-white font-bold transition shadow-sm cursor-pointer"
+                    className="flex-1 sm:flex-initial px-6 py-2.5 rounded-xl bg-[#C06B3E] hover:bg-[#a8582d] text-white font-bold transition shadow-sm cursor-pointer text-center"
                   >
                     {editingCategory ? 'Save Changes' : 'Create Category'}
                   </button>

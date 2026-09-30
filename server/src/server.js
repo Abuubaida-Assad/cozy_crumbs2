@@ -31,7 +31,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Configure CORS for production and development
+// Configure CORS for production and development (including local mobile testing on Wi-Fi)
 const defaultOrigins = [
   'https://cozy-crumbs-rosy.vercel.app',
   'http://localhost:5173',
@@ -45,15 +45,23 @@ const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
 
 app.use(cors({
   origin(origin, callback) {
-    // Allow non-browser requests (curl, server-to-server proxies)
+    // Allow non-browser requests (curl, server-to-server proxies, mobile apps)
     if (!origin) return callback(null, true);
-    // Allow configured origins or any Vercel preview deployment for this project
+
+    // Allow configured origins or any Vercel deployment
     if (
       allowedOrigins.includes(origin) ||
       origin.endsWith('.vercel.app')
     ) {
       return callback(null, true);
     }
+
+    // Allow local development and mobile network IPs (e.g. http://192.168.x.x:5173, http://10.x.x.x, http://localhost)
+    const isLocalNetwork = /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?$/.test(origin);
+    if (isLocalNetwork) {
+      return callback(null, true);
+    }
+
     return callback(new Error(`Origin ${origin} not allowed by CORS`));
   },
   credentials: true,

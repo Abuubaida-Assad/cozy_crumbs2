@@ -8,16 +8,16 @@ import CustomerReviews from '../components/CustomerReviews';
 export default function HomePage() {
   return (
     <div className="relative bg-[#F8F8F2]">
-      {/* 1. Hero Section from Photo 5 */}
+      {/* 1. Hero Section */}
       <HeroSection />
 
-      {/* 2. Bestsellers Section from Photo 4 */}
+      {/* 2. Bestsellers Section (Signature Bakes & Direct WhatsApp Order) */}
       <BestsellersSection />
 
-      {/* 3. The Best Things in Life are Sweet + Arched Gallery from Photo 1 */}
+      {/* 3. The Best Things in Life are Sweet + Arched Gallery */}
       <ArchesDisplay />
 
-      {/* 4. Celebrate with Cake from Photo 3 */}
+      {/* 4. Celebrate with Cake */}
       <CelebrateSection />
 
       {/* 5. Customer Reviews with Indian Names */}
